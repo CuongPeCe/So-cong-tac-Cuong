@@ -2,6 +2,8 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c231a">
 <title>Sổ công tác</title>
 <style>
   :root{
@@ -754,6 +756,91 @@
     to{opacity:1; transform:rotate(-4deg) scale(1);}
   }
 
+  /* ===== Ghim quan trọng ===== */
+  .sl-pinned{color:#8a5a00; border-bottom-color:#e0a83c;}
+  .pin-flag{margin-right:5px;}
+  .pin-btn{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    font-family:inherit;
+    font-size:0.72rem;
+    font-weight:600;
+    padding:2px 8px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .pin-btn:hover{border-color:#e0a83c; color:#8a5a00;}
+  .pin-btn.pinned{background:#fdf3dc; border-color:#e0a83c; color:#8a5a00;}
+  #pinnedSection tr.task-row{background:#fffdf5;}
+  #pinnedSection tr.task-row td{border-left:none;}
+  #pinnedSection table.task-table{border-left:3px solid #e0a83c;}
+
+  /* ===== Chỉ tiêu định kỳ ===== */
+  .quota-box{
+    margin:8px 0 6px;
+    padding:10px 12px;
+    background:#f2f7ff;
+    border:1px solid #c9dcf5;
+    border-left:3px solid #2f6fb5;
+    border-radius:3px;
+  }
+  .quota-box.done{background:#f1f8f0; border-color:#c3e0bd; border-left-color:#3f8f38;}
+  .quota-headline{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  .quota-big{font-size:1.15rem; font-weight:700; color:#1f4e85;}
+  .quota-box.done .quota-big{color:#2f7a2a;}
+  .quota-remain{font-size:0.82rem; font-weight:600; color:var(--overdue);}
+  .quota-deadline{font-size:0.78rem; color:var(--ink-soft); margin-top:4px;}
+  .quota-pace{margin-left:6px; font-weight:600;}
+  .quota-pace.warn{color:var(--overdue);}
+  .quota-today{font-size:0.8rem; margin-top:6px;}
+  .quota-today-ask{color:#8a5a00; font-weight:600;}
+  .quota-today-done{color:#2f7a2a; font-weight:600;}
+  .quota-actions{display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap;}
+  .quota-btn{
+    border:1px solid #2f6fb5;
+    background:#fff;
+    color:#1f4e85;
+    font-family:inherit;
+    font-size:0.8rem;
+    font-weight:700;
+    padding:5px 12px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .quota-btn.plus{background:#2f6fb5; color:#fff;}
+  .quota-btn:hover{opacity:0.85;}
+  .quota-input{
+    width:90px;
+    padding:5px 8px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-family:inherit;
+    font-size:0.8rem;
+  }
+  .summary-quota{
+    font-size:0.78rem;
+    color:#1f4e85;
+    font-weight:600;
+    margin-top:3px;
+  }
+  .quota-toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .quota-field{
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-family:inherit;
+    font-size:0.85rem;
+    width:130px;
+  }
+
   .empty{
     color:var(--ink-soft);
     font-size:0.9rem;
@@ -934,11 +1021,6 @@
     color:var(--ink-soft);
   }
 
-  @media (max-width:600px){
-    .cal-cell{min-height:48px; padding:3px;}
-    .cal-legend{gap:8px;}
-  }
-
   .history-section{margin-top:30px;}
   .history-list{
     background:var(--card);
@@ -1104,32 +1186,289 @@
     100%{transform:scale(1); opacity:1;}
   }
 
+  /* ================= GIAO DIỆN DI ĐỘNG ================= */
   @media (max-width:600px){
-    .overview-groups{grid-template-columns:1fr;}
-    .overview{grid-template-columns:repeat(2,1fr);}
+    html{-webkit-text-size-adjust:100%;}
+    body{background-size:18px 18px;}
+    .wrap{padding:14px 12px 90px;}
+    header{padding:12px 12px; margin:-14px -12px 14px;}
+    h1{font-size:1.25rem;}
+    .title-row{flex-direction:column; align-items:flex-start; gap:4px;}
+    .clock-box{text-align:left;}
+
+    /* Thống kê tổng quan: xếp dọc, mỗi nhóm 2 cột số */
+    .overview-groups{grid-template-columns:1fr; gap:8px;}
+    .overview{grid-template-columns:repeat(4,1fr); gap:4px;}
+    .ov-cell{padding:8px 4px;}
+    .ov-num{font-size:1.15rem;}
+    .ov-label{font-size:0.58rem;}
+
+    /* Thanh tab: cuộn ngang, không xuống dòng */
+    .tab-bar{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      gap:0;
+      margin:0 -12px 14px;
+      padding:0 12px;
+      border-bottom:2px solid var(--ink);
+    }
+    .tab-bar::-webkit-scrollbar{display:none;}
+    .tab-btn{
+      flex:0 0 auto;
+      white-space:nowrap;
+      padding:10px 12px;
+      font-size:0.82rem;
+    }
+    .tab-btn .tab-count{font-size:0.66rem; padding:1px 5px; margin-left:4px;}
+
+    /* Ô thêm việc: xếp dọc, ô nào cũng full chiều rộng */
+    .add-box{flex-direction:column; align-items:stretch; gap:8px; padding:10px; margin-bottom:14px;}
+    .add-box input[type=text]{min-width:0; width:100%; font-size:1rem; padding:8px 6px; border:1px solid var(--line); background:#fff;}
+    .add-box input[type=text].add-recipient{width:100%; padding:8px; font-size:0.9rem;}
+    .add-box input[type=date], .add-box select{width:100%; font-size:0.95rem; padding:8px; min-height:42px;}
+    .add-box button{width:100%; padding:12px; font-size:1rem; min-height:46px;}
+
+    .summary-toolbar{flex-direction:column; align-items:stretch; padding:10px;}
+    .summary-export-btn{width:100%; padding:12px; min-height:46px;}
+    .personal-toolbar{justify-content:stretch;}
+    .lock-again-btn{width:100%; padding:10px; font-size:0.85rem;}
+
+    /* Chuyển Danh sách / Lịch */
+    .view-switch{gap:0; margin-bottom:12px;}
+    .view-switch-btn{flex:1; padding:10px 8px; font-size:0.85rem; min-height:42px;}
+
+    .section-label{font-size:0.78rem; margin:18px 0 8px;}
+
+    /* Hàng việc -> dạng thẻ: hàng 1 STT + tick + nội dung; hàng 2 Còn lại + tiến độ + xóa */
+    .task-table{border-spacing:0;}
     .task-table thead{display:none;}
-    tr.task-row{display:flex; flex-wrap:wrap; padding:8px 0; align-items:center;}
-    tr.task-row td{display:block; padding:3px 10px;}
+    tr.task-row{
+      display:flex; flex-wrap:wrap; align-items:flex-start;
+      padding:10px 0 8px;
+      border-bottom:1px solid var(--line-soft);
+    }
+    tr.task-row td{display:block; padding:2px 8px; border-left:none !important;}
+    tr.task-row.row-overdue, tr.task-row.row-today{border-left:4px solid transparent;}
+    tr.task-row.row-overdue{border-left-color:var(--overdue);}
+    tr.task-row.row-today{border-left-color:var(--today);}
     td.cell-stt{
-      order:1;
-      width:28px;
-      flex-shrink:0;
-      padding:3px 0 !important;
-      display:flex; align-items:center; justify-content:center;
+      order:1; width:26px; flex-shrink:0;
+      padding:4px 0 0 !important;
+      display:flex; align-items:flex-start; justify-content:center;
+      font-size:0.78rem;
     }
     td.cell-check{
-      order:2;
-      width:28px;
-      flex-shrink:0;
-      padding:3px 0 !important;
-      display:flex !important; align-items:center; justify-content:center;
+      order:2; width:34px; flex-shrink:0;
+      padding:2px 0 0 !important;
+      display:flex !important; align-items:flex-start; justify-content:center;
     }
-    td:not(.cell-stt):not(.cell-check){order:3; width:100%;}
-    td.cell-progress{padding-top:6px !important;}
-    td.cell-del{text-align:left;}
-    .title-row{flex-direction:column; align-items:flex-start;}
-    .clock-box{text-align:left;}
-    .add-box input[type=text].add-recipient{width:100%;}
+    td.cell-check input[type=checkbox]{width:22px; height:22px;}
+    tr.task-row td:nth-child(3){order:3; flex:0 0 calc(100% - 60px); width:calc(100% - 60px); min-width:0; padding:0 6px 0 4px;}
+    .task-text{font-size:0.96rem; line-height:1.4;}
+    td.cell-days{
+      order:4; flex:0 0 auto; width:auto;
+      padding:8px 8px 0 64px !important;
+      font-size:0.8rem;
+      display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    }
+    td.cell-progress{
+      order:5; flex:1 1 auto; min-width:110px;
+      padding:8px 4px 0 8px !important;
+    }
+    td.cell-del{order:6; flex:0 0 auto; width:auto; padding:4px 8px 0 !important; text-align:right;}
+    .del-btn{font-size:1.4rem; padding:2px 8px; min-width:36px; min-height:36px;}
+    .progress-slider{width:100%;}
+
+    /* Bảng tab Tổng hợp (không có cột tick): cột nội dung là cột thứ 2 */
+    .summary-table-wrap tr.task-row td:nth-child(2){order:3; flex:0 0 calc(100% - 26px); width:calc(100% - 26px); min-width:0; padding:0 6px 0 4px;}
+    .summary-table-wrap tr.task-row td:nth-child(3){order:4; flex:0 0 auto; padding:6px 8px 0 32px !important;}
+    .summary-table-wrap td.cell-days{padding-left:32px !important;}
+    .summary-type-tag{display:inline-block; margin:4px 0 0; font-size:0.6rem;}
+
+    /* Các nút chỉnh sửa trong thẻ: to đủ chạm */
+    .task-due-row{flex-wrap:wrap; gap:6px;}
+    .edit-due-btn, .edit-note-btn, .due-save-btn, .due-cancel-btn, .renew-btn,
+    .daily-yes-btn, .daily-no-btn{min-height:36px; padding:6px 10px; font-size:0.8rem;}
+    .due-edit-form input[type=date], .due-edit-form input[type=text]{width:100%; min-height:40px; font-size:0.95rem;}
+    .due-edit-form textarea{font-size:0.95rem;}
+    .daily-check{flex-direction:column; align-items:stretch;}
+
+    /* Lịch sử hoàn thành & thống kê tháng */
+    .history-item{flex-direction:column; align-items:flex-start; gap:4px; padding:8px 0;}
+    .history-date{padding-left:40px; font-size:0.72rem;}
+    .history-undo-btn{min-width:32px; min-height:32px;}
+    .month-stats{gap:6px;}
+    .month-chip{flex:1 1 calc(50% - 6px); min-width:0; padding:8px 10px;}
+    .mc-export-btn{min-height:34px;}
+
+    /* Lịch tháng thu gọn */
+    .calendar-wrap{padding:8px; margin:0 -4px 16px;}
+    .cal-header{gap:6px;}
+    .cal-title{font-size:0.95rem;}
+    .cal-nav-btn{width:34px; height:34px;}
+    .cal-today-btn{padding:6px 8px; min-height:34px;}
+    .cal-legend{gap:6px 10px; font-size:0.66rem;}
+    .cal-weekdays{font-size:0.62rem; gap:2px;}
+    .cal-grid{gap:2px;}
+    .cal-cell{min-height:46px; padding:3px;}
+    .cal-daynum{font-size:0.7rem;}
+    .cal-dots .cal-dot{width:5px; height:5px;}
+    .cal-day-item{font-size:0.82rem; padding:8px;}
+
+    /* Thanh trạng thái & toast */
+    .status-bar{
+      position:fixed; left:0; right:0; bottom:0;
+      background:var(--card);
+      border-top:1px solid var(--line);
+      padding:8px 12px;
+      font-size:0.74rem;
+      z-index:50;
+      display:flex; justify-content:space-between; align-items:center; gap:8px;
+    }
+    .undo-toast{bottom:52px; max-width:94vw;}
+    .undo-toast .ut-text{max-width:50vw;}
+  }
+
+  /* Màn rất nhỏ (< 380px) */
+  @media (max-width:380px){
+    .overview{grid-template-columns:repeat(2,1fr);}
+    .tab-btn{padding:10px 9px; font-size:0.76rem;}
+    td.cell-days{padding-left:8px !important;}
+  }
+
+  /* ===== Giao diện di động dạng app: FAB + bottom nav + bottom sheet ===== */
+  .fab, .bottom-nav, .add-sheet-backdrop, .add-sheet-title{display:none;}
+
+  @media (max-width:600px){
+    /* Ẩn thanh tab cuộn ngang, thay bằng bottom nav */
+    .tab-bar{display:none;}
+
+    /* Chừa chỗ cho bottom nav + status bar + vùng an toàn iPhone */
+    .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom));}
+
+    /* Thống kê tổng quan: dải cuộn ngang, mỗi nhóm là một thẻ rộng ~86% màn */
+    .overview-groups{
+      display:flex;
+      grid-template-columns:none;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scroll-snap-type:x mandatory;
+      scrollbar-width:none;
+      gap:8px;
+      margin:0 -12px 14px;
+      padding:0 12px 4px;
+    }
+    .overview-groups::-webkit-scrollbar{display:none;}
+    .overview-group{flex:0 0 86%; scroll-snap-align:start;}
+    .overview-group.total{flex:0 0 92%;}
+
+    /* Ô thêm việc: mặc định ẩn, bung lên như bottom sheet khi bấm + */
+    #addBoxWrap{
+      display:none !important;
+      position:fixed; left:0; right:0;
+      bottom:calc(56px + env(safe-area-inset-bottom));
+      z-index:70;
+      background:var(--card);
+      border:none;
+      border-top:3px solid var(--accent);
+      border-radius:14px 14px 0 0;
+      box-shadow:0 -8px 28px rgba(0,0,0,0.18);
+      padding:14px 14px 16px;
+      margin:0;
+      max-height:70vh;
+      overflow-y:auto;
+    }
+    #addBoxWrap.sheet-open{display:flex !important;}
+    .add-sheet-backdrop.open{
+      display:block;
+      position:fixed; inset:0;
+      background:rgba(20,24,30,0.45);
+      z-index:60;
+    }
+    .add-sheet-title{
+      display:flex; justify-content:space-between; align-items:center;
+      font-weight:700; font-size:0.95rem;
+      margin-bottom:4px;
+    }
+    .add-sheet-close{
+      background:none; border:none; font-size:1.5rem; line-height:1;
+      color:var(--ink-soft); padding:2px 8px; cursor:pointer;
+    }
+
+    /* Nút nổi + */
+    .fab{
+      display:flex; align-items:center; justify-content:center;
+      position:fixed;
+      right:16px;
+      bottom:calc(68px + env(safe-area-inset-bottom));
+      width:54px; height:54px;
+      border-radius:50%;
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      font-size:2rem; line-height:1;
+      box-shadow:0 6px 18px rgba(0,0,0,0.28);
+      z-index:65;
+      cursor:pointer;
+      transition:transform 0.15s;
+    }
+    .fab:active{transform:scale(0.92);}
+    .fab.hidden{display:none;}
+
+    /* Bottom nav */
+    .bottom-nav{
+      display:flex;
+      position:fixed; left:0; right:0; bottom:0;
+      height:calc(56px + env(safe-area-inset-bottom));
+      padding-bottom:env(safe-area-inset-bottom);
+      background:var(--card);
+      border-top:1px solid var(--line);
+      box-shadow:0 -2px 10px rgba(0,0,0,0.06);
+      z-index:80;
+    }
+    .bn-btn{
+      flex:1;
+      position:relative;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:2px;
+      background:none; border:none;
+      color:var(--ink-soft);
+      font-family:inherit;
+      cursor:pointer;
+      padding:6px 2px 4px;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .bn-icon{font-size:1.25rem; line-height:1;}
+    .bn-label{font-size:0.62rem; font-weight:600; letter-spacing:0.2px; white-space:nowrap;}
+    .bn-btn.active{color:var(--accent);}
+    .bn-btn.active::before{
+      content:""; position:absolute; top:0; left:20%; right:20%;
+      height:3px; background:var(--accent); border-radius:0 0 3px 3px;
+    }
+    .bn-btn.bn-personal.active{color:#b45309;}
+    .bn-btn.bn-personal.active::before{background:#b45309;}
+    .bn-badge{
+      position:absolute; top:4px; right:calc(50% - 22px);
+      min-width:17px; height:17px; padding:0 4px;
+      border-radius:9px;
+      background:var(--overdue);
+      color:#fff;
+      font-size:0.6rem; font-weight:700;
+      display:flex; align-items:center; justify-content:center;
+      font-family:"Menlo","Consolas",monospace;
+    }
+    .bn-badge.zero{display:none;}
+    .bn-badge.locked{background:#b45309;}
+
+    /* Status bar nằm ngay trên bottom nav */
+    .status-bar{
+      bottom:calc(56px + env(safe-area-inset-bottom));
+      padding:5px 12px;
+      font-size:0.7rem;
+      z-index:55;
+    }
+    .undo-toast{bottom:calc(96px + env(safe-area-inset-bottom));}
   }
 </style>
 </head>
@@ -1176,6 +1515,7 @@
 
   <div id="mainContent">
   <div class="add-box" id="addBoxWrap">
+    <div class="add-sheet-title" id="addSheetTitle">Thêm việc mới <button class="add-sheet-close" id="addSheetClose" aria-label="Đóng">&times;</button></div>
     <input type="text" id="newTaskText" placeholder="Nhập việc cần làm...">
     <select id="newTaskType">
       <option value="task">Có thời hạn cụ thể</option>
@@ -1187,6 +1527,11 @@
       <option value="week">Lặp hàng tuần</option>
       <option value="month" selected>Lặp hàng tháng</option>
     </select>
+    <label class="quota-toggle" id="quotaToggleWrap" style="display:none;">
+      <input type="checkbox" id="newTaskHasQuota"> Có chỉ tiêu số lượng
+    </label>
+    <input type="number" id="newTaskQuotaTarget" class="quota-field" min="1" placeholder="Chỉ tiêu (vd 30)" style="display:none;">
+    <input type="text" id="newTaskQuotaUnit" class="quota-field" placeholder="Đơn vị (vd cơ sở)" style="display:none;">
     <input type="text" class="add-recipient" id="newTaskRecipient" placeholder="Nơi nhận / nơi triển khai">
     <input type="date" id="newTaskDate">
     <button id="addBtn">Thêm</button>
@@ -1235,6 +1580,13 @@
   </div>
 
   <div id="listViewSections">
+  <div id="pinnedSection" style="display:none;">
+    <div class="section-label sl-pinned">📌 Ghim quan trọng — nhớ làm <span class="count-badge" id="pinnedCount">0</span></div>
+    <table class="task-table"><thead><tr>
+      <th class="col-stt">STT</th><th class="col-check"></th><th>Nội dung</th><th class="col-days">Còn lại</th><th class="col-progress">Tiến độ</th><th class="col-del"></th>
+    </tr></thead><tbody class="task-group" id="pinnedList"></tbody></table>
+  </div>
+
   <div id="overdueSection" style="display:none;">
     <div class="section-label sl-overdue">Quá hạn <span class="count-badge" id="overdueCount">0</span></div>
     <table class="task-table"><thead><tr>
@@ -1292,7 +1644,60 @@
   <button id="undoToastBtn">Hoàn tác</button>
 </div>
 
+<!-- Giao diện di động: nút nổi thêm việc + thanh điều hướng đáy (chỉ hiện ≤ 600px) -->
+<button class="fab" id="fabAddBtn" title="Thêm việc" aria-label="Thêm việc">+</button>
+
+<nav class="bottom-nav" id="bottomNav">
+  <button class="bn-btn" data-tab="summary">
+    <span class="bn-icon">📋</span>
+    <span class="bn-label">Tổng hợp</span>
+    <span class="bn-badge" id="bnCountSummary">0</span>
+  </button>
+  <button class="bn-btn active" data-tab="task">
+    <span class="bn-icon">📌</span>
+    <span class="bn-label">Có hạn</span>
+    <span class="bn-badge" id="bnCountTask">0</span>
+  </button>
+  <button class="bn-btn" data-tab="recurring">
+    <span class="bn-icon">🔁</span>
+    <span class="bn-label">Thường xuyên</span>
+    <span class="bn-badge" id="bnCountRecurring">0</span>
+  </button>
+  <button class="bn-btn bn-personal" data-tab="personal">
+    <span class="bn-icon">🔒</span>
+    <span class="bn-label">Cá nhân</span>
+    <span class="bn-badge" id="bnCountPersonal">0</span>
+  </button>
+</nav>
+<div class="add-sheet-backdrop" id="addSheetBackdrop"></div>
+
 <script>
+// ===== Lưu trữ cục bộ (localStorage) =====
+// Trang này ban đầu dùng window.storage (chỉ có trong môi trường xem trước của Claude).
+// Khi host độc lập trên GitHub Pages, API đó không tồn tại nên trước đây MỌI thao tác
+// thêm/tích việc đều KHÔNG được lưu — mỗi lần tải lại trang là mất hết, quay về danh sách mặc định.
+// Đoạn polyfill dưới đây thay thế bằng localStorage của trình duyệt, giữ nguyên cách gọi
+// (window.storage.get/set) nên không phải sửa lại các chỗ khác trong file.
+// Lưu ý: dữ liệu lưu theo TỪNG TRÌNH DUYỆT/MÁY, không tự đồng bộ giữa các thiết bị.
+if (typeof window.storage === 'undefined') {
+  window.storage = {
+    get(key){
+      return new Promise(resolve=>{
+        try{
+          const raw = localStorage.getItem('so_cong_tac_' + key);
+          resolve(raw === null ? null : { value: raw });
+        }catch(e){ resolve(null); }
+      });
+    },
+    set(key, value){
+      return new Promise(resolve=>{
+        try{ localStorage.setItem('so_cong_tac_' + key, value); }catch(e){}
+        resolve();
+      });
+    }
+  };
+}
+
 const STORAGE_KEY = 'tasks';
 let tasks = [];
 let currentTab = 'task';
@@ -1341,7 +1746,102 @@ function migrateTask(t){
   if(t.note === undefined) t.note = '';
   if(t.recipient === undefined) t.recipient = '';
   if(t.type === 'recurring' && !t.cycle) t.cycle = 'month';
+  // Trường mới — việc cũ chưa có thì gán mặc định, không ảnh hưởng dữ liệu đã lưu.
+  if(typeof t.pinned !== 'boolean') t.pinned = false;
+  if(t.quota){
+    if(typeof t.quota.target !== 'number') t.quota.target = 0;
+    if(!t.quota.unit) t.quota.unit = 'việc';
+    if(!Array.isArray(t.quota.entries)) t.quota.entries = [];
+  }
   return t;
+}
+
+// ===== Chỉ tiêu định kỳ (ví dụ: mỗi tháng kiểm tra tối thiểu 30 cơ sở) =====
+function quotaDoneCount(t){
+  if(!t.quota) return 0;
+  return t.quota.entries.reduce((sum, e)=> sum + (e.n || 0), 0);
+}
+function quotaTodayCount(t){
+  if(!t.quota) return 0;
+  const today = todayStr();
+  return t.quota.entries.filter(e=>e.date === today).reduce((sum,e)=> sum + (e.n||0), 0);
+}
+function quotaRemaining(t){
+  return Math.max(0, (t.quota?.target || 0) - quotaDoneCount(t));
+}
+// Đồng bộ % tiến độ theo số đã làm / chỉ tiêu, để thanh tiến độ và báo cáo khớp nhau.
+function syncQuotaProgress(t){
+  if(!t.quota || !t.quota.target) return;
+  t.progress = Math.min(100, Math.round(quotaDoneCount(t) / t.quota.target * 100));
+}
+function addQuotaCount(id, n){
+  const t = tasks.find(x=>x.id===id);
+  if(!t || !t.quota) return;
+  const today = todayStr();
+  if(n > 0){
+    t.quota.entries.push({ date: today, n });
+  } else {
+    // Trừ ngược: bỏ bớt từ bản ghi mới nhất trở về trước.
+    let toRemove = -n;
+    for(let i = t.quota.entries.length - 1; i >= 0 && toRemove > 0; i--){
+      const e = t.quota.entries[i];
+      const take = Math.min(e.n, toRemove);
+      e.n -= take; toRemove -= take;
+      if(e.n <= 0) t.quota.entries.splice(i, 1);
+    }
+  }
+  syncQuotaProgress(t);
+  // Đạt đủ chỉ tiêu thì tự đánh dấu hoàn thành kỳ này.
+  if(t.quota.target && quotaDoneCount(t) >= t.quota.target && !t.done){
+    t.done = true;
+    t.completedAt = today;
+    logRecurringCompletion(t.text, t.due, today);
+  } else if(t.done && quotaDoneCount(t) < t.quota.target){
+    t.done = false;
+    t.completedAt = null;
+  }
+  saveTasks(); render();
+}
+// Nhịp độ cần thiết để kịp hạn: còn lại / số ngày còn lại.
+function quotaPaceHtml(t){
+  const remaining = quotaRemaining(t);
+  if(!t.due || remaining <= 0) return '';
+  const daysLeft = daysBetween(t.due);
+  if(daysLeft < 0) return `<span class="quota-pace warn">Đã quá hạn — còn thiếu ${remaining} ${escapeHtml(t.quota.unit)}</span>`;
+  const days = Math.max(1, daysLeft);
+  const perDay = remaining / days;
+  const paceText = perDay <= 1
+    ? `cần khoảng ${Math.ceil(days / remaining)} ngày/${escapeHtml(t.quota.unit)}`
+    : `cần khoảng ${perDay.toFixed(1)} ${escapeHtml(t.quota.unit)}/ngày`;
+  return `<span class="quota-pace${perDay > 3 ? ' warn' : ''}">Còn ${daysLeft} ngày — ${paceText}</span>`;
+}
+function quotaPanelHtml(t){
+  if(!t.quota || !t.quota.target) return '';
+  const done = quotaDoneCount(t);
+  const remaining = quotaRemaining(t);
+  const unit = escapeHtml(t.quota.unit);
+  const todayN = quotaTodayCount(t);
+  const finished = remaining <= 0;
+  return `
+    <div class="quota-box${finished ? ' done' : ''}">
+      <div class="quota-headline">
+        ${finished
+          ? `<span class="quota-big">Đã đạt chỉ tiêu ${done}/${t.quota.target} ${unit}</span>`
+          : `<span class="quota-big">${done}/${t.quota.target} ${unit}</span><span class="quota-remain">còn thiếu ${remaining} ${unit}</span>`}
+      </div>
+      ${t.due ? `<div class="quota-deadline">Phải xong trước ${formatDateVN(t.due)} ${quotaPaceHtml(t)}</div>` : ''}
+      <div class="quota-today">
+        ${todayN > 0
+          ? `<span class="quota-today-done">Hôm nay đã ghi nhận ${todayN} ${unit}</span>`
+          : `<span class="quota-today-ask">Hôm nay đã làm được ${unit} nào chưa?</span>`}
+      </div>
+      <div class="quota-actions">
+        <button class="quota-btn minus" data-role="quota-minus" title="Trừ 1">−1</button>
+        <button class="quota-btn plus" data-role="quota-plus">+1 ${unit}</button>
+        <input type="number" class="quota-input" data-role="quota-input" min="1" placeholder="Nhập số">
+        <button class="quota-btn add-n" data-role="quota-add-n">Cộng thêm</button>
+      </div>
+    </div>`;
 }
 
 // Tự động chuyển nhiệm vụ nhắc-hàng-ngày (cycle 'day') đã xong của ngày cũ
@@ -1433,14 +1933,37 @@ function addTask(){
     type: typeSelect.value,
     text:text, due:dateInput.value || null, done:false, progress:0,
     createdAt:todayStr(), completedAt:null,
-    note:'', recipient: recipientInput.value.trim()
+    note:'', recipient: recipientInput.value.trim(), pinned:false
   };
-  if(typeSelect.value === 'recurring') newTask.cycle = cycleSelect.value;
+  if(typeSelect.value === 'recurring'){
+    newTask.cycle = cycleSelect.value;
+    // Chỉ tiêu số lượng (ví dụ: mỗi tháng kiểm tra tối thiểu 30 cơ sở)
+    const hasQuota = document.getElementById('newTaskHasQuota').checked;
+    const target = parseInt(document.getElementById('newTaskQuotaTarget').value, 10);
+    if(hasQuota && target > 0){
+      newTask.quota = {
+        target,
+        unit: (document.getElementById('newTaskQuotaUnit').value.trim() || 'việc'),
+        entries: [],
+        history: []
+      };
+    }
+  }
   tasks.push(newTask);
   textInput.value=''; dateInput.value=''; recipientInput.value='';
-  currentTab = typeSelect.value;
-  updateTabUI();
-  saveTasks(); render(); textInput.focus();
+  document.getElementById('newTaskHasQuota').checked = false;
+  document.getElementById('newTaskQuotaTarget').value = '';
+  document.getElementById('newTaskQuotaUnit').value = '';
+  updateCycleVisibility();
+  saveTasks();
+  // Chuyển về đúng tab của việc vừa thêm (qua currentTabGoTo để tôn trọng khóa mục cá nhân)
+  currentTabGoTo(typeSelect.value);
+  if(isMobileLayout()){
+    closeAddSheet();
+    textInput.blur();
+  } else {
+    textInput.focus();
+  }
 }
 
 let lastUndoState = null;
@@ -1475,6 +1998,13 @@ function renewLabel(cycle){
   if(cycle==='day') return 'Sang ngày mới →';
   if(cycle==='week') return 'Sang tuần mới →';
   return 'Sang tháng mới →';
+}
+
+function togglePin(id){
+  const t = tasks.find(x=>x.id===id);
+  if(!t) return;
+  t.pinned = !t.pinned;
+  saveTasks(); render();
 }
 
 function toggleTask(id){
@@ -1539,6 +2069,13 @@ function renewRecurring(id){
   if(!t) return;
   const cycle = t.cycle || 'month';
   const nextDue = t.due ? advanceByCycle(t.due, cycle) : advanceByCycle(todayStr(), cycle);
+  // Sang kỳ mới thì chỉ tiêu đếm lại từ đầu, nhưng lưu kết quả kỳ vừa khép lại để đối chiếu.
+  if(t.quota && t.quota.target){
+    t.quota.history = Array.isArray(t.quota.history) ? t.quota.history : [];
+    t.quota.history.unshift({ due: t.due, achieved: quotaDoneCount(t), target: t.quota.target });
+    t.quota.history = t.quota.history.slice(0, 24);
+    t.quota.entries = [];
+  }
   t.due = nextDue;
   t.done = false;
   t.progress = 0;
@@ -1728,13 +2265,15 @@ function makeRow(t, stt){
     <td class="cell-stt">${stt != null ? stt : ''}</td>
     <td class="cell-check">${isDailyCheck ? '' : `<input type="checkbox" ${t.done?'checked':''}>`}</td>
     <td>
-      <div class="task-text">${escapeHtml(t.text)}${recurringTag}${doneLabel}</div>
+      <div class="task-text">${t.pinned ? '<span class="pin-flag">📌</span>' : ''}${escapeHtml(t.text)}${recurringTag}${doneLabel}</div>
       ${recipientHtml}
+      ${quotaPanelHtml(t)}
       ${dailyCheckHtml}
       <div class="task-due-row" data-role="due-display">
         ${t.due ? `<span class="task-due">Hạn: ${formatDateVN(t.due)}</span>` : `<span class="task-due">Chưa có hạn</span>`}
         <button class="edit-due-btn" data-role="edit-due-btn">Sửa tên/hạn/nơi nhận</button>
         <button class="edit-note-btn" data-role="edit-note-btn">${t.note ? 'Sửa ghi chú' : '+ Ghi chú'}</button>
+        <button class="pin-btn${t.pinned ? ' pinned' : ''}" data-role="pin-btn" title="${t.pinned ? 'Bỏ ghim' : 'Ghim lên đầu'}">${t.pinned ? '📌 Bỏ ghim' : '📌 Ghim'}</button>
       </div>
       <div class="due-edit-form" data-role="due-edit-form" style="display:none; flex-direction:column; align-items:stretch;">
         <textarea data-role="text-edit-input" placeholder="Nội dung việc..." style="min-height:44px; border-color:var(--accent);">${escapeHtml(t.text)}</textarea>
@@ -1763,7 +2302,7 @@ function makeRow(t, stt){
         <div class="progress-track"><div class="progress-fill ${t.progress>=100?'full':''}" style="width:${t.progress}%"></div></div>
         <span class="progress-pct">${t.progress}%</span>
       </div>
-      <input type="range" class="progress-slider" min="0" max="100" step="5" value="${t.progress}">
+      <input type="range" class="progress-slider" min="0" max="100" step="5" value="${t.progress}"${t.quota && t.quota.target ? ' style="display:none;"' : ''}>
     </td>
     <td class="cell-del"><button class="del-btn" title="Xóa việc này">&times;</button></td>
   `;
@@ -1785,6 +2324,26 @@ function makeRow(t, stt){
   });
   tr.querySelector('.progress-slider').addEventListener('change', (e)=> setProgress(t.id, e.target.value));
   tr.querySelector('.del-btn').onclick = () => deleteTask(t.id);
+  tr.querySelector('[data-role="pin-btn"]').onclick = () => togglePin(t.id);
+
+  const quotaPlus = tr.querySelector('[data-role="quota-plus"]');
+  if(quotaPlus){
+    quotaPlus.onclick = () => addQuotaCount(t.id, 1);
+    tr.querySelector('[data-role="quota-minus"]').onclick = () => addQuotaCount(t.id, -1);
+    const qInput = tr.querySelector('[data-role="quota-input"]');
+    tr.querySelector('[data-role="quota-add-n"]').onclick = () => {
+      const n = parseInt(qInput.value, 10);
+      if(n > 0) addQuotaCount(t.id, n);
+      qInput.value = '';
+    };
+    qInput.addEventListener('keydown', e=>{
+      if(e.key === 'Enter'){
+        const n = parseInt(qInput.value, 10);
+        if(n > 0) addQuotaCount(t.id, n);
+        qInput.value = '';
+      }
+    });
+  }
 
   const dueDisplay = tr.querySelector('[data-role="due-display"]');
   const dueForm = tr.querySelector('[data-role="due-edit-form"]');
@@ -1841,6 +2400,56 @@ function updateTabUI(){
   document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.toggle('active', btn.dataset.tab === currentTab);
   });
+  document.querySelectorAll('.bn-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.tab === currentTab);
+  });
+  updateMobileChrome();
+}
+
+// ===== Giao diện di động: bottom nav, FAB, bottom sheet thêm việc =====
+function setBadge(id, value, locked){
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.textContent = locked ? '🔒' : value;
+  el.classList.toggle('zero', !locked && !value);
+  el.classList.toggle('locked', !!locked);
+}
+
+function updateMobileBadges(){
+  setBadge('bnCountSummary', tasks.filter(t=>t.type!=='personal' && !t.done).length);
+  setBadge('bnCountTask', tasks.filter(t=>t.type==='task' && !t.done).length);
+  setBadge('bnCountRecurring', tasks.filter(t=>t.type==='recurring' && !t.done).length);
+  setBadge('bnCountPersonal', tasks.filter(t=>t.type==='personal' && !t.done).length, !personalUnlocked);
+}
+
+// Ẩn nút + ở tab Tổng hợp (chỉ xem) và khi mục cá nhân đang khóa.
+function updateMobileChrome(){
+  const fab = document.getElementById('fabAddBtn');
+  const hide = currentTab === 'summary' || (currentTab === 'personal' && !personalUnlocked);
+  fab.classList.toggle('hidden', hide);
+  if(hide) closeAddSheet();
+}
+
+function openAddSheet(){
+  const box = document.getElementById('addBoxWrap');
+  box.classList.add('sheet-open');
+  document.getElementById('addSheetBackdrop').classList.add('open');
+  // Chọn sẵn loại việc theo tab đang mở để đỡ phải chọn lại
+  const typeSel = document.getElementById('newTaskType');
+  if(currentTab === 'task' || currentTab === 'recurring' || currentTab === 'personal'){
+    typeSel.value = currentTab;
+    typeSel.dispatchEvent(new Event('change'));
+  }
+  setTimeout(()=> document.getElementById('newTaskText').focus(), 80);
+}
+
+function closeAddSheet(){
+  document.getElementById('addBoxWrap').classList.remove('sheet-open');
+  document.getElementById('addSheetBackdrop').classList.remove('open');
+}
+
+function isMobileLayout(){
+  return window.matchMedia('(max-width:600px)').matches;
 }
 
 let personalUnlocked = false;
@@ -1878,6 +2487,8 @@ function showLockScreen(){
   document.getElementById('lockPasswordInput').value = '';
   document.getElementById('lockSetupNote').style.display = personalPwHash ? 'none' : 'block';
   document.getElementById('lockTitle').textContent = personalPwHash ? 'Mục Việc cá nhân đã khóa' : 'Thiết lập mật khẩu cho Việc cá nhân';
+  updateMobileChrome();
+  updateMobileBadges();
   setTimeout(()=> document.getElementById('lockPasswordInput').focus(), 50);
 }
 
@@ -1952,6 +2563,8 @@ function render(){
     document.getElementById('tabCountPersonal').textContent = personalUnlocked
       ? tasks.filter(t=>t.type==='personal' && !t.done).length
       : '🔒';
+    updateMobileBadges();
+    updateMobileChrome();
     renderOverviewGroups();
     renderSummaryTab();
     document.getElementById('taskCount').textContent = 'Xem tổng hợp — không thêm/sửa được ở tab này';
@@ -1968,25 +2581,34 @@ function render(){
   const upcomingList = document.getElementById('upcomingList');
   const nodateList = document.getElementById('nodateList');
   const doneRecurringList = document.getElementById('doneRecurringList');
-  [overdueList, todayList, upcomingList, nodateList, doneRecurringList].forEach(el=>el.innerHTML='');
+  const pinnedList = document.getElementById('pinnedList');
+  [pinnedList, overdueList, todayList, upcomingList, nodateList, doneRecurringList].forEach(el=>el.innerHTML='');
 
   const visibleTasks = tasks.filter(t=>t.type === currentTab);
   const active = visibleTasks.filter(t=>!t.done);
   const done = visibleTasks.filter(t=>t.done);
 
-  const overdue = active.filter(t=>t.due && t.due < today).sort((a,b)=>a.due.localeCompare(b.due));
-  const dueToday = active.filter(t=>t.due === today);
-  const upcoming = active.filter(t=>t.due && t.due > today).sort((a,b)=>a.due.localeCompare(b.due));
-  const nodate = active.filter(t=>!t.due);
+  // Việc đã ghim tách hẳn lên mục riêng ở đầu, không lặp lại ở các mục dưới.
+  const pinned = active.filter(t=>t.pinned)
+    .sort((a,b)=> (a.due||'9999').localeCompare(b.due||'9999'));
+  const rest = active.filter(t=>!t.pinned);
 
-  // STT đánh số liên tục theo thứ tự ưu tiên (quá hạn → hôm nay → sắp tới → chưa có hạn)
+  const overdue = rest.filter(t=>t.due && t.due < today).sort((a,b)=>a.due.localeCompare(b.due));
+  const dueToday = rest.filter(t=>t.due === today);
+  const upcoming = rest.filter(t=>t.due && t.due > today).sort((a,b)=>a.due.localeCompare(b.due));
+  const nodate = rest.filter(t=>!t.due);
+
+  // STT đánh số liên tục theo thứ tự ưu tiên (ghim → quá hạn → hôm nay → sắp tới → chưa có hạn)
   // để số cuối cùng phản ánh đúng tổng số việc còn phải làm trong tab này.
   let sttCounter = 0;
+  pinned.forEach(t=>pinnedList.appendChild(makeRow(t, ++sttCounter)));
   overdue.forEach(t=>overdueList.appendChild(makeRow(t, ++sttCounter)));
   dueToday.forEach(t=>todayList.appendChild(makeRow(t, ++sttCounter)));
   upcoming.forEach(t=>upcomingList.appendChild(makeRow(t, ++sttCounter)));
   nodate.forEach(t=>nodateList.appendChild(makeRow(t, ++sttCounter)));
 
+  document.getElementById('pinnedSection').style.display = pinned.length ? 'block':'none';
+  document.getElementById('pinnedCount').textContent = pinned.length;
   document.getElementById('overdueSection').style.display = overdue.length ? 'block':'none';
   document.getElementById('todaySection').style.display = dueToday.length ? 'block':'none';
   document.getElementById('upcomingSection').style.display = upcoming.length ? 'block':'none';
@@ -2013,6 +2635,8 @@ function render(){
   document.getElementById('tabCountPersonal').textContent = personalUnlocked
     ? tasks.filter(t=>t.type==='personal' && !t.done).length
     : '🔒';
+  updateMobileBadges();
+  updateMobileChrome();
 
   const historySection = document.getElementById('historySection');
   const historyList = document.getElementById('historyList');
@@ -2194,10 +2818,12 @@ function renderSummaryTab(){
   const wrap = document.getElementById('summaryTableWrap');
   const all = tasks.filter(t => t.type !== 'personal' && !t.done);
 
-  const overdue = all.filter(t=>t.due && t.due < today).sort((a,b)=>a.due.localeCompare(b.due));
-  const dueToday = all.filter(t=>t.due === today);
-  const upcoming = all.filter(t=>t.due && t.due > today).sort((a,b)=>a.due.localeCompare(b.due));
-  const nodate = all.filter(t=>!t.due);
+  const pinned = all.filter(t=>t.pinned).sort((a,b)=> (a.due||'9999').localeCompare(b.due||'9999'));
+  const rest = all.filter(t=>!t.pinned);
+  const overdue = rest.filter(t=>t.due && t.due < today).sort((a,b)=>a.due.localeCompare(b.due));
+  const dueToday = rest.filter(t=>t.due === today);
+  const upcoming = rest.filter(t=>t.due && t.due > today).sort((a,b)=>a.due.localeCompare(b.due));
+  const nodate = rest.filter(t=>!t.due);
 
   if(!all.length){
     wrap.innerHTML = `<div class="empty">Không có việc nào đang làm (ngoài việc cá nhân).</div>`;
@@ -2205,6 +2831,7 @@ function renderSummaryTab(){
   }
 
   const groups = [
+    { label: '📌 Ghim quan trọng', cls: 'sl-pinned', list: pinned },
     { label: 'Quá hạn', cls: 'sl-overdue', list: overdue },
     { label: 'Hôm nay', cls: 'sl-today', list: dueToday },
     { label: 'Sắp tới', cls: '', list: upcoming },
@@ -2228,7 +2855,8 @@ function renderSummaryTab(){
       html += `<tr class="task-row${t.due && t.due < today ? ' row-overdue' : (t.due===today ? ' row-today' : '')}">
         <td class="cell-stt">${sttCounter}</td>
         <td>
-          <div class="task-text">${escapeHtml(t.text)}${typeTag}</div>
+          <div class="task-text">${t.pinned ? '<span class="pin-flag">📌</span>' : ''}${escapeHtml(t.text)}${typeTag}</div>
+          ${t.quota && t.quota.target ? `<div class="summary-quota">Chỉ tiêu: ${quotaDoneCount(t)}/${t.quota.target} ${escapeHtml(t.quota.unit)} — còn thiếu ${quotaRemaining(t)}</div>` : ''}
           ${recipientHtml}
           ${t.due ? `<div class="task-due">Hạn: ${formatDateVN(t.due)}</div>` : ''}
         </td>
@@ -2457,9 +3085,15 @@ document.getElementById('undoToastBtn').onclick = undoLastToggle;
 const newTaskTypeSelect = document.getElementById('newTaskType');
 const newTaskCycleSelect = document.getElementById('newTaskCycle');
 function updateCycleVisibility(){
-  newTaskCycleSelect.style.display = newTaskTypeSelect.value === 'recurring' ? 'inline-block' : 'none';
+  const isRecurring = newTaskTypeSelect.value === 'recurring';
+  newTaskCycleSelect.style.display = isRecurring ? 'inline-block' : 'none';
+  document.getElementById('quotaToggleWrap').style.display = isRecurring ? 'inline-flex' : 'none';
+  const hasQuota = isRecurring && document.getElementById('newTaskHasQuota').checked;
+  document.getElementById('newTaskQuotaTarget').style.display = hasQuota ? 'inline-block' : 'none';
+  document.getElementById('newTaskQuotaUnit').style.display = hasQuota ? 'inline-block' : 'none';
 }
 newTaskTypeSelect.addEventListener('change', updateCycleVisibility);
+document.getElementById('newTaskHasQuota').addEventListener('change', updateCycleVisibility);
 updateCycleVisibility();
 
 document.querySelectorAll('.tab-btn').forEach(btn=>{
@@ -2472,6 +3106,21 @@ document.getElementById('lockUnlockBtn').onclick = attemptUnlock;
 document.getElementById('lockPasswordInput').addEventListener('keydown', e=>{ if(e.key==='Enter') attemptUnlock(); });
 document.getElementById('lockAgainBtn').onclick = lockPersonalAgain;
 document.getElementById('summaryExportBtn').onclick = exportSummaryReportToExcel;
+
+// Giao diện di động
+document.querySelectorAll('.bn-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    closeAddSheet();
+    currentTabGoTo(btn.dataset.tab);
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+});
+document.getElementById('fabAddBtn').onclick = openAddSheet;
+document.getElementById('addSheetClose').onclick = closeAddSheet;
+document.getElementById('addSheetBackdrop').onclick = closeAddSheet;
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAddSheet(); });
+// Khi xoay màn hình / đổi kích thước sang máy tính thì bỏ trạng thái sheet
+window.matchMedia('(max-width:600px)').addEventListener('change', ()=>{ closeAddSheet(); updateMobileChrome(); });
 
 document.querySelectorAll('.view-switch-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
