@@ -1671,32 +1671,71 @@
 </nav>
 <div class="add-sheet-backdrop" id="addSheetBackdrop"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-// ===== Lưu trữ cục bộ (localStorage) =====
-// Trang này ban đầu dùng window.storage (chỉ có trong môi trường xem trước của Claude).
-// Khi host độc lập trên GitHub Pages, API đó không tồn tại nên trước đây MỌI thao tác
-// thêm/tích việc đều KHÔNG được lưu — mỗi lần tải lại trang là mất hết, quay về danh sách mặc định.
-// Đoạn polyfill dưới đây thay thế bằng localStorage của trình duyệt, giữ nguyên cách gọi
-// (window.storage.get/set) nên không phải sửa lại các chỗ khác trong file.
-// Lưu ý: dữ liệu lưu theo TỪNG TRÌNH DUYỆT/MÁY, không tự đồng bộ giữa các thiết bị.
-if (typeof window.storage === 'undefined') {
-  window.storage = {
-    get(key){
-      return new Promise(resolve=>{
+// ===== Lưu trữ dùng chung nhiều thiết bị (Firebase Firestore) =====
+// Trang này ban đầu dùng window.storage (chỉ có trong môi trường xem trước của Claude) —
+// không tồn tại khi host trên GitHub Pages, nên trước đây MỌI thao tác thêm/tích việc
+// đều không được lưu. Sau đó đã chuyển tạm sang localStorage (chỉ lưu theo từng máy).
+// Bản này chuyển sang Firestore để đồng bộ giữa nhiều máy/thiết bị của anh Cường,
+// đồng thời vẫn giữ localStorage làm bộ nhớ đệm (dùng được tạm khi mất mạng, và là
+// nguồn dữ liệu để "nâng cấp" lên Firestore lần đầu tiên nếu máy đó đã có dữ liệu cũ).
+// Giữ nguyên cách gọi window.storage.get/set nên không phải sửa lại các chỗ khác trong file.
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDqlIXfZRBiKG2egYbNqTpGUfiauaowMN0",
+  authDomain: "so-cong-tac-cuong.firebaseapp.com",
+  projectId: "so-cong-tac-cuong",
+  storageBucket: "so-cong-tac-cuong.firebasestorage.app",
+  messagingSenderId: "811896483915",
+  appId: "1:811896483915:web:b7c178c22484b2923c5dce"
+};
+let _fsDb = null;
+try{
+  if(window.firebase && firebase.initializeApp){
+    firebase.initializeApp(FIREBASE_CONFIG);
+    _fsDb = firebase.firestore();
+  }
+}catch(e){ _fsDb = null; }
+
+window.storage = {
+  async get(key){
+    const localKey = 'so_cong_tac_' + key;
+    if(_fsDb){
+      try{
+        const snap = await _fsDb.collection('kv').doc(key).get();
+        if(snap.exists){
+          const value = snap.data().value;
+          try{ localStorage.setItem(localKey, value); }catch(e){}
+          return { value };
+        }
+        // Chưa có trên Firestore: nếu máy này đang có dữ liệu cũ (localStorage) thì
+        // đẩy lên làm bản gốc dùng chung, để không mất dữ liệu đã lỡ nhập trước đó.
         try{
-          const raw = localStorage.getItem('so_cong_tac_' + key);
-          resolve(raw === null ? null : { value: raw });
-        }catch(e){ resolve(null); }
-      });
-    },
-    set(key, value){
-      return new Promise(resolve=>{
-        try{ localStorage.setItem('so_cong_tac_' + key, value); }catch(e){}
-        resolve();
-      });
+          const local = localStorage.getItem(localKey);
+          if(local !== null){
+            await _fsDb.collection('kv').doc(key).set({ value: local, updatedAt: Date.now() });
+            return { value: local };
+          }
+        }catch(e){}
+        return null;
+      }catch(e){
+        // Mất mạng hoặc lỗi Firestore — tạm dùng bản lưu cục bộ gần nhất.
+      }
     }
-  };
-}
+    try{
+      const raw = localStorage.getItem(localKey);
+      return raw === null ? null : { value: raw };
+    }catch(e){ return null; }
+  },
+  async set(key, value){
+    const localKey = 'so_cong_tac_' + key;
+    try{ localStorage.setItem(localKey, value); }catch(e){}
+    if(_fsDb){
+      try{ await _fsDb.collection('kv').doc(key).set({ value, updatedAt: Date.now() }); }catch(e){}
+    }
+  }
+};
 
 const STORAGE_KEY = 'tasks';
 let tasks = [];
