@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1c231a">
 <title>Sổ công tác</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
 <style>
   :root{
     --paper:#eef1e7;
@@ -448,6 +450,8 @@
     100%{background:transparent;}
   }
   tr.task-row.just-renewed{animation: fadeSlideIn 0.35s ease both, rowFlash 1.6s ease both;}
+  /* Hàng đã hiện trước đó: không chạy lại hiệu ứng mỗi lần vẽ lại (đỡ nháy, đỡ tốn CPU) */
+  tr.task-row.no-anim, .history-item.no-anim{animation:none;}
   tr.task-row td{
     padding:10px;
     vertical-align:top;
@@ -1698,44 +1702,94 @@ try{
   }
 }catch(e){ _fsDb = null; }
 
+// Tối ưu lưu trữ:
+// - Ghi localStorage ngay lập tức, còn ghi Firestore được gộp lại (debounce) để nhiều thao tác
+//   liên tiếp chỉ tốn 1 lần ghi mạng.
+// - Đánh dấu "chưa đồng bộ" (dirty) cho tới khi Firestore xác nhận đã nhận. Nếu sửa lúc mất mạng
+//   hoặc đóng trang quá nhanh, lần mở sau sẽ đẩy bản trên máy lên thay vì bị bản cũ trên
+//   Firestore ghi đè (trước đây dữ liệu sửa offline bị mất theo cách này).
+const LOCAL_PREFIX = 'so_cong_tac_';
+const DIRTY_PREFIX = 'so_cong_tac__dirty_';
+const REMOTE_WRITE_DELAY = 500;
+const _pendingRemote = {}; // key -> timer
+
+function _localGet(key){ try{ return localStorage.getItem(LOCAL_PREFIX + key); }catch(e){ return null; } }
+function _localSet(key, value){ try{ localStorage.setItem(LOCAL_PREFIX + key, value); }catch(e){} }
+function _isDirty(key){ try{ return localStorage.getItem(DIRTY_PREFIX + key) === '1'; }catch(e){ return false; } }
+function _setDirty(key, dirty){
+  try{ dirty ? localStorage.setItem(DIRTY_PREFIX + key, '1') : localStorage.removeItem(DIRTY_PREFIX + key); }catch(e){}
+}
+function _remoteWrite(key, value){
+  return _fsDb.collection('kv').doc(key).set({ value, updatedAt: Date.now() })
+    .then(()=>{ if(_localGet(key) === value) _setDirty(key, false); })
+    .catch(()=>{});
+}
+function _flushRemote(key){
+  clearTimeout(_pendingRemote[key]);
+  delete _pendingRemote[key];
+  const value = _localGet(key);
+  if(!_fsDb || value === null) return Promise.resolve();
+  return _remoteWrite(key, value);
+}
+
 window.storage = {
+  // Đọc ngay bản trên máy (đồng bộ, không chờ mạng) — để hiển thị sổ tức thì khi mở trang.
+  getLocal(key){
+    const raw = _localGet(key);
+    return raw === null ? null : { value: raw };
+  },
   async get(key){
-    const localKey = 'so_cong_tac_' + key;
+    const local = _localGet(key);
     if(_fsDb){
+      // Máy này có thay đổi chưa kịp lên Firestore: bản trên máy là bản mới nhất.
+      if(local !== null && _isDirty(key)){
+        _flushRemote(key);
+        return { value: local };
+      }
       try{
         const snap = await _fsDb.collection('kv').doc(key).get();
         if(snap.exists){
           const value = snap.data().value;
-          try{ localStorage.setItem(localKey, value); }catch(e){}
+          _localSet(key, value);
           return { value };
         }
         // Chưa có trên Firestore: nếu máy này đang có dữ liệu cũ (localStorage) thì
         // đẩy lên làm bản gốc dùng chung, để không mất dữ liệu đã lỡ nhập trước đó.
-        try{
-          const local = localStorage.getItem(localKey);
-          if(local !== null){
-            await _fsDb.collection('kv').doc(key).set({ value: local, updatedAt: Date.now() });
-            return { value: local };
-          }
-        }catch(e){}
+        if(local !== null){
+          await _remoteWrite(key, local);
+          return { value: local };
+        }
         return null;
       }catch(e){
         // Mất mạng hoặc lỗi Firestore — tạm dùng bản lưu cục bộ gần nhất.
       }
     }
-    try{
-      const raw = localStorage.getItem(localKey);
-      return raw === null ? null : { value: raw };
-    }catch(e){ return null; }
+    return local === null ? null : { value: local };
   },
   async set(key, value){
-    const localKey = 'so_cong_tac_' + key;
-    try{ localStorage.setItem(localKey, value); }catch(e){}
-    if(_fsDb){
-      try{ await _fsDb.collection('kv').doc(key).set({ value, updatedAt: Date.now() }); }catch(e){}
-    }
+    _localSet(key, value);
+    _setDirty(key, true);
+    if(!_fsDb) return;
+    clearTimeout(_pendingRemote[key]);
+    _pendingRemote[key] = setTimeout(()=> _flushRemote(key), REMOTE_WRITE_DELAY);
+  },
+  // Còn thay đổi trên máy chưa lên Firestore?
+  hasUnsynced(key){ return !!_pendingRemote[key] || _isDirty(key); },
+  flushAll(){ return Promise.all(Object.keys(_pendingRemote).map(_flushRemote)); },
+  // Nhận thay đổi từ thiết bị khác theo thời gian thực.
+  subscribe(key, cb){
+    if(!_fsDb) return;
+    _fsDb.collection('kv').doc(key).onSnapshot(snap=>{
+      if(snap.metadata.hasPendingWrites || !snap.exists) return;
+      cb(snap.data().value);
+    }, ()=>{});
   }
 };
+// Rời trang / chuyển app thì đẩy ngay các thay đổi đang chờ, không đợi hết thời gian gộp.
+window.addEventListener('pagehide', ()=>{ window.storage.flushAll(); });
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'hidden') window.storage.flushAll();
+});
 
 const STORAGE_KEY = 'tasks';
 let tasks = [];
@@ -1923,34 +1977,97 @@ const ADDITIONAL_SEED_TASKS = [
   }
 ];
 
-async function loadTasks(){
-  try{
-    const result = await window.storage.get(STORAGE_KEY, false);
-    tasks = result ? JSON.parse(result.value).map(migrateTask) : null;
-    if(tasks === null){
-      tasks = DEFAULT_TASKS;
-      await window.storage.set(STORAGE_KEY, JSON.stringify(tasks), false);
-    }
-  }catch(e){
-    tasks = DEFAULT_TASKS;
-    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(tasks), false); }catch(e2){}
-  }
+function parseTasks(raw){
+  return JSON.parse(raw).map(migrateTask);
+}
 
-  let addedNew = false;
+// Nạp danh sách việc vào bộ nhớ, bổ sung việc mẫu còn thiếu, tự chuyển việc hàng ngày rồi vẽ lại.
+// persist=false: chỉ hiển thị tạm (bản trên máy khi chưa có phản hồi Firestore) — không lưu,
+// để bản trên máy không bị coi là "mới hơn" và ghi đè dữ liệu của thiết bị khác.
+function applyLoadedTasks(list, persist = true){
+  tasks = list;
+  let changed = false;
   ADDITIONAL_SEED_TASKS.forEach(seed=>{
     if(!tasks.find(t=>t.id===seed.id)){
-      tasks.push(seed);
-      addedNew = true;
+      tasks.push({ ...seed });
+      changed = true;
     }
   });
-
-  if(autoRenewDailyTasks() || addedNew){
-    await saveTasks();
-  }
+  if(autoRenewDailyTasks()) changed = true;
+  if(changed && persist) saveTasks();
   render();
 }
 
+async function loadTasks(){
+  // 1) Hiện ngay bản lưu trên máy (không chờ mạng) để mở sổ tức thì.
+  let shownLocal = false;
+  const local = window.storage.getLocal(STORAGE_KEY);
+  if(local){
+    try{ applyLoadedTasks(parseTasks(local.value), false); shownLocal = true; }catch(e){}
+  }
+
+  // 2) Lấy bản mới nhất từ Firestore rồi áp dụng chính thức (có lưu nếu cần);
+  //    chỉ vẽ lại khi khác bản đang hiển thị.
+  try{
+    const result = await window.storage.get(STORAGE_KEY);
+    if(shownLocal && userChangedDuringLoad){
+      // Người dùng đã thao tác trong lúc chờ mạng: giữ thao tác đó (ghi lên Firestore).
+      saveTasks();
+    } else if(result){
+      if(!shownLocal || result.value !== local.value){
+        applyLoadedTasks(parseTasks(result.value));
+      } else {
+        // Trùng bản trên máy: chỉ cần lưu nếu bước 1 có bổ sung/tự chuyển ngày.
+        if(JSON.stringify(tasks) !== result.value) saveTasks();
+      }
+    } else if(!shownLocal){
+      applyLoadedTasks(DEFAULT_TASKS.map(t=>({ ...t })));
+      saveTasks();
+    }
+  }catch(e){
+    if(!shownLocal){
+      applyLoadedTasks(DEFAULT_TASKS.map(t=>({ ...t })));
+      saveTasks();
+    }
+  }
+
+  loadFinished = true;
+  // 3) Đồng bộ trực tiếp: thiết bị khác sửa thì máy này tự cập nhật, không cần tải lại trang.
+  window.storage.subscribe(STORAGE_KEY, applyRemoteTasks);
+}
+
+let pendingRemoteTasks = null;
+let pendingRemoteTimer = null;
+
+// Đang mở ô sửa hoặc đang gõ trong danh sách thì chưa vẽ lại (tránh mất chữ đang gõ).
+function isEditingInList(){
+  const active = document.activeElement;
+  if(active && (active.tagName === 'TEXTAREA' || (active.tagName === 'INPUT' && active.type !== 'checkbox'))
+     && active.closest('#listViewSections')) return true;
+  return [...document.querySelectorAll('#listViewSections .due-edit-form')].some(f=>f.style.display === 'flex');
+}
+
+function applyRemoteTasks(value){
+  clearTimeout(pendingRemoteTimer);
+  pendingRemoteTasks = null;
+  // Máy này còn thay đổi chưa đẩy lên thì giữ bản trên máy (bản đó sẽ được ghi lên sau).
+  if(window.storage.hasUnsynced(STORAGE_KEY)) return;
+  if(value === JSON.stringify(tasks)) return;
+  if(isEditingInList()){
+    pendingRemoteTasks = value;
+    pendingRemoteTimer = setTimeout(()=> applyRemoteTasks(pendingRemoteTasks), 2000);
+    return;
+  }
+  try{ tasks = parseTasks(value); }catch(e){ return; }
+  try{ localStorage.setItem(LOCAL_PREFIX + STORAGE_KEY, value); }catch(e){}
+  render();
+}
+
+let loadFinished = false;
+let userChangedDuringLoad = false;
+
 async function saveTasks(){
+  if(!loadFinished) userChangedDuringLoad = true;
   try{
     await window.storage.set(STORAGE_KEY, JSON.stringify(tasks), false);
     showSaveIndicator();
@@ -2008,6 +2125,9 @@ function addTask(){
 let lastUndoState = null;
 let undoTimer = null;
 let justRenewedId = null;
+// Các việc đã hiện trên màn hình — vẽ lại thì không chạy lại hiệu ứng trượt vào.
+const renderedRowIds = new Set();
+const renderedHistoryIds = new Set();
 
 function addOneMonth(dateStr){
   const [y,m,d] = dateStr.split('-').map(Number);
@@ -2192,19 +2312,14 @@ function setProgress(id, val){
   saveTasks(); render();
 }
 
-function setDueDate(id, newDate){
-  const t = tasks.find(x=>x.id===id);
-  if(!t) return;
-  t.due = newDate || null;
-  saveTasks(); render();
-}
-
-function setTaskText(id, newText){
+// Lưu cùng lúc tên + hạn + nơi nhận: 1 lần lưu, 1 lần vẽ lại (trước đây 3 lần mỗi thứ).
+function updateTaskDetails(id, newText, newDate, newRecipient){
   const t = tasks.find(x=>x.id===id);
   if(!t) return;
   const trimmed = newText.trim();
-  if(!trimmed) return; // không cho lưu rỗng, tránh xóa nhầm nội dung
-  t.text = trimmed;
+  if(trimmed) t.text = trimmed; // không cho lưu rỗng, tránh xóa nhầm nội dung
+  t.due = newDate || null;
+  t.recipient = newRecipient.trim();
   saveTasks(); render();
 }
 
@@ -2212,13 +2327,6 @@ function setNote(id, newNote){
   const t = tasks.find(x=>x.id===id);
   if(!t) return;
   t.note = newNote.trim();
-  saveTasks(); render();
-}
-
-function setRecipient(id, newRecipient){
-  const t = tasks.find(x=>x.id===id);
-  if(!t) return;
-  t.recipient = newRecipient.trim();
   saveTasks(); render();
 }
 
@@ -2275,6 +2383,8 @@ function makeRow(t, stt){
   else if(t.due && t.due < today){ tr.classList.add('row-overdue'); }
   else if(t.due === today){ tr.classList.add('row-today'); }
   if(justRenewedId === t.id){ tr.classList.add('just-renewed'); }
+  else if(renderedRowIds.has(t.id)){ tr.classList.add('no-anim'); }
+  renderedRowIds.add(t.id);
 
   const recurringTag = t.type === 'recurring' ? `<span class="recurring-tag">↻ ${cycleLabel(t.cycle||'month')}</span>` : '';
   const recipientHtml = t.recipient
@@ -2402,9 +2512,7 @@ function makeRow(t, stt){
     dueDisplay.style.display = 'flex';
   };
   tr.querySelector('[data-role="due-save-btn"]').onclick = () => {
-    setTaskText(t.id, textEditInput.value);
-    setDueDate(t.id, dueInput.value);
-    setRecipient(t.id, recipientInput.value);
+    updateTaskDetails(t.id, textEditInput.value, dueInput.value, recipientInput.value);
   };
 
   tr.querySelector('[data-role="edit-note-btn"]').onclick = () => {
@@ -2426,10 +2534,10 @@ function makeRow(t, stt){
   return tr;
 }
 
+// Thay ký tự đặc biệt bằng chuỗi (không tạo phần tử DOM mỗi lần gọi như trước).
+const HTML_ESCAPES = { '&':'&amp;', '<':'&lt;', '>':'&gt;' };
 function escapeHtml(str){
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return String(str ?? '').replace(/[&<>]/g, ch => HTML_ESCAPES[ch]);
 }
 function escapeAttr(str){
   return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
@@ -2454,12 +2562,30 @@ function setBadge(id, value, locked){
   el.classList.toggle('locked', !!locked);
 }
 
-function updateMobileBadges(){
-  setBadge('bnCountSummary', tasks.filter(t=>t.type!=='personal' && !t.done).length);
-  setBadge('bnCountTask', tasks.filter(t=>t.type==='task' && !t.done).length);
-  setBadge('bnCountRecurring', tasks.filter(t=>t.type==='recurring' && !t.done).length);
-  setBadge('bnCountPersonal', tasks.filter(t=>t.type==='personal' && !t.done).length, !personalUnlocked);
+// Đếm số việc chưa xong theo từng loại — 1 vòng lặp thay cho nhiều lần filter.
+function countActiveByType(){
+  const c = { task:0, recurring:0, personal:0, summary:0 };
+  tasks.forEach(t=>{
+    if(t.done) return;
+    if(c[t.type] !== undefined) c[t.type]++;
+    if(t.type !== 'personal') c.summary++;
+  });
+  return c;
 }
+
+// Cập nhật số đếm ở thanh tab (máy tính) và bottom nav (di động).
+function updateTabCounts(){
+  const c = countActiveByType();
+  document.getElementById('tabCountSummary').textContent = c.summary;
+  document.getElementById('tabCountTask').textContent = c.task;
+  document.getElementById('tabCountRecurring').textContent = c.recurring;
+  document.getElementById('tabCountPersonal').textContent = personalUnlocked ? c.personal : '🔒';
+  setBadge('bnCountSummary', c.summary);
+  setBadge('bnCountTask', c.task);
+  setBadge('bnCountRecurring', c.recurring);
+  setBadge('bnCountPersonal', c.personal, !personalUnlocked);
+}
+function updateMobileBadges(){ updateTabCounts(); }
 
 // Ẩn nút + ở tab Tổng hợp (chỉ xem) và khi mục cá nhân đang khóa.
 function updateMobileChrome(){
@@ -2487,8 +2613,9 @@ function closeAddSheet(){
   document.getElementById('addSheetBackdrop').classList.remove('open');
 }
 
+const mobileMql = window.matchMedia('(max-width:600px)');
 function isMobileLayout(){
-  return window.matchMedia('(max-width:600px)').matches;
+  return mobileMql.matches;
 }
 
 let personalUnlocked = false;
@@ -2596,13 +2723,7 @@ function render(){
     document.getElementById('listViewSections').style.display = 'none';
     document.getElementById('historySection').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('tabCountSummary').textContent = tasks.filter(t=>t.type!=='personal' && !t.done).length;
-    document.getElementById('tabCountTask').textContent = tasks.filter(t=>t.type==='task' && !t.done).length;
-    document.getElementById('tabCountRecurring').textContent = tasks.filter(t=>t.type==='recurring' && !t.done).length;
-    document.getElementById('tabCountPersonal').textContent = personalUnlocked
-      ? tasks.filter(t=>t.type==='personal' && !t.done).length
-      : '🔒';
-    updateMobileBadges();
+    updateTabCounts();
     updateMobileChrome();
     renderOverviewGroups();
     renderSummaryTab();
@@ -2669,12 +2790,7 @@ function render(){
     : (overdue.length + dueToday.length + upcoming.length + nodate.length + done.length);
   document.getElementById('emptyState').style.display = totalVisibleRows ? 'none':'block';
 
-  document.getElementById('tabCountTask').textContent = tasks.filter(t=>t.type==='task' && !t.done).length;
-  document.getElementById('tabCountRecurring').textContent = tasks.filter(t=>t.type==='recurring' && !t.done).length;
-  document.getElementById('tabCountPersonal').textContent = personalUnlocked
-    ? tasks.filter(t=>t.type==='personal' && !t.done).length
-    : '🔒';
-  updateMobileBadges();
+  updateTabCounts();
   updateMobileChrome();
 
   const historySection = document.getElementById('historySection');
@@ -2691,7 +2807,8 @@ function render(){
     historySection.style.display = 'block';
     doneSorted.forEach((t, idx)=>{
       const div = document.createElement('div');
-      div.className = 'history-item';
+      div.className = 'history-item' + (renderedHistoryIds.has(t.id) ? ' no-anim' : '');
+      renderedHistoryIds.add(t.id);
       div.innerHTML = `
         <div class="history-left">
           <span class="history-stt">${idx+1}</span>
@@ -2714,6 +2831,8 @@ function render(){
     `${active.length} việc cần làm` + (overdue.length ? ` · ${overdue.length} quá hạn` : '') + (done.length ? ` · ${done.length} đã xong` : '');
 
   if(currentView === 'calendar') renderCalendar();
+  // Hiệu ứng nháy "vừa sang kỳ mới" chỉ chạy 1 lần, không lặp lại ở mỗi lần vẽ sau.
+  justRenewedId = null;
 }
 
 function applyViewUI(){
@@ -3159,7 +3278,7 @@ document.getElementById('addSheetClose').onclick = closeAddSheet;
 document.getElementById('addSheetBackdrop').onclick = closeAddSheet;
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAddSheet(); });
 // Khi xoay màn hình / đổi kích thước sang máy tính thì bỏ trạng thái sheet
-window.matchMedia('(max-width:600px)').addEventListener('change', ()=>{ closeAddSheet(); updateMobileChrome(); });
+mobileMql.addEventListener('change',()=>{ closeAddSheet(); updateMobileChrome(); });
 
 document.querySelectorAll('.view-switch-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -3174,14 +3293,28 @@ document.getElementById('calTodayBtn').onclick = () => { calMonthOffset = 0; cal
 document.getElementById('calDayDetailClose').onclick = hideCalDayDetail;
 applyViewUI();
 
+const WEEKDAYS_VN = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+const clockTimeEl = document.getElementById('clockTime');
+const clockDateEl = document.getElementById('clockDate');
+let clockDay = null;
 function tickClock(){
   const d = new Date();
   const hh = String(d.getHours()).padStart(2,'0');
   const mi = String(d.getMinutes()).padStart(2,'0');
   const ss = String(d.getSeconds()).padStart(2,'0');
-  document.getElementById('clockTime').textContent = `${hh}:${mi}:${ss}`;
-  const weekdays = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
-  document.getElementById('clockDate').textContent = `${weekdays[d.getDay()]}, ${formatDateVN(todayStr())}`;
+  clockTimeEl.textContent = `${hh}:${mi}:${ss}`;
+  const today = todayStr();
+  if(today === clockDay) return;
+  // Sang ngày mới (để sổ mở qua đêm): cập nhật ngày, câu động viên, trạng thái quá hạn/hôm nay
+  // và tự chuyển việc nhắc hàng ngày — trước đây phải tải lại trang mới đúng.
+  if(clockDay !== null && tasks.length){
+    if(isEditingInList()) return; // đợi sửa xong rồi mới vẽ lại
+    if(autoRenewDailyTasks()) saveTasks();
+    renderMotivation();
+    if(!(currentTab === 'personal' && !personalUnlocked)) render();
+  }
+  clockDay = today;
+  clockDateEl.textContent = `${WEEKDAYS_VN[d.getDay()]}, ${formatDateVN(today)}`;
 }
 tickClock();
 setInterval(tickClock, 1000);
