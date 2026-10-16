@@ -34,11 +34,6 @@
   h1{font-size:1.4rem; margin:0; font-weight:700;}
   h1::before{content:"● "; color:var(--accent-soft);}
   .subtitle{color:#c9c2a4; font-size:0.84rem; margin-top:3px;}
-  .whoami{font-size:0.85rem; text-align:right;}
-  .whoami button{
-    margin-left:8px; background:none; border:1px solid rgba(253,250,243,0.4); color:#fdfaf3;
-    border-radius:5px; padding:4px 10px; font-family:inherit; font-size:0.78rem; cursor:pointer;
-  }
 
   .card{background:var(--card); border:1px solid var(--line); padding:14px 16px; margin-bottom:18px;}
   .card h2{
@@ -122,7 +117,6 @@
   @media (max-width:520px){
     .stats{grid-template-columns:repeat(2,1fr);}
     .row2{grid-template-columns:1fr;}
-    .whoami{text-align:left;}
   }
 </style>
 </head>
@@ -134,28 +128,18 @@
         <h1>Giao việc</h1>
         <div class="subtitle">Sổ công tác — giao việc, xem khối lượng việc đang làm</div>
       </div>
-      <div class="whoami" id="whoami" hidden></div>
     </div>
   </header>
 
   <div class="center-note" id="loading">Đang tải…</div>
 
-  <!-- Đăng nhập -->
-  <section class="card" id="loginCard" hidden>
-    <h2>Đăng nhập chỉ huy</h2>
-    <label for="loginUser">Tài khoản</label>
-    <select id="loginUser"></select>
-    <label for="loginPin">Mã PIN</label>
-    <input type="password" id="loginPin" inputmode="numeric" autocomplete="off" placeholder="Nhập mã PIN">
-    <button class="btn-primary" id="loginBtn">Đăng nhập</button>
-    <div class="msg err" id="loginMsg"></div>
-    <div class="hint" id="loginEmpty" hidden>Chưa có tài khoản chỉ huy nào. Liên hệ người nhận việc để được tạo tài khoản.</div>
-  </section>
-
   <!-- Màn chính -->
   <div id="mainArea" hidden>
     <section class="card">
       <h2>Giao việc mới</h2>
+      <label for="asgName">Người giao (chọn hoặc gõ tên của bạn)</label>
+      <input type="text" id="asgName" list="nameList" placeholder="Ví dụ: Đ/c Hùng" maxlength="40" autocomplete="off">
+      <datalist id="nameList"></datalist>
       <label for="asgText">Nội dung việc cần làm</label>
       <textarea id="asgText" placeholder="Ví dụ: Báo cáo kết quả rà soát CSKV trên địa bàn…" maxlength="1000"></textarea>
       <div class="row2">
@@ -194,7 +178,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 // Trang giao việc dành cho chỉ huy. Dùng chung Firestore với sổ công tác (nhacviec.html).
-// Mã PIN chỉ là cổng ẩn/hiện + ghi nhận tên người giao, KHÔNG phải bảo mật mạnh.
+// Không cần mật khẩu: chỉ huy chọn hoặc gõ tên mình. Ai có link đều giao được.
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDqlIXfZRBiKG2egYbNqTpGUfiauaowMN0",
   authDomain: "so-cong-tac-cuong.firebaseapp.com",
@@ -203,7 +187,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "811896483915",
   appId: "1:811896483915:web:b7c178c22484b2923c5dce"
 };
-const LOGIN_KEY = 'giaoviec_login';
+const NAME_KEY = 'giaoviec_name';
 // Ngưỡng đánh giá khối lượng (số việc có thời hạn đang làm).
 const LOAD_MEDIUM_AT = 5, LOAD_HEAVY_AT = 10;
 const SEND_SLOW_MS = 8000;
@@ -231,84 +215,43 @@ function daysBetween(s){ return Math.round((new Date(s + 'T00:00:00') - new Date
 function getStored(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function setStored(k, v){ try{ v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); }catch(e){} }
 
-// Phải giống hệt hàm pinHash trong nhacviec.html.
-function pinHash(id, pin){
-  const str = 'soct:' + id + ':' + pin;
-  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
-  for(let i=0, ch; i<str.length; i++){
-    ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
-  return (4294967296 * (2097151 & h2) + (h1>>>0)).toString(36);
-}
-
 async function kvGet(key){
   const snap = await db.collection('kv').doc(key).get();
   return snap.exists ? JSON.parse(snap.data().value) : null;
 }
 
-// ---------- Đăng nhập ----------
-function showLogin(msg){
-  $('loading').hidden = true;
-  $('mainArea').hidden = true;
-  $('whoami').hidden = true;
-  $('loginCard').hidden = false;
-  const sel = $('loginUser');
-  sel.innerHTML = commanders.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.title ? ' — ' + escapeHtml(c.title) : ''}</option>`).join('');
-  $('loginEmpty').hidden = commanders.length > 0;
-  $('loginBtn').disabled = commanders.length === 0;
-  $('loginMsg').textContent = msg || '';
-  $('loginPin').value = '';
+// ---------- Người giao ----------
+// Mã định danh theo tên (không phân biệt hoa thường/khoảng trắng) để mỗi người xem lại được việc mình đã giao.
+function nameKey(n){ return n.trim().toLowerCase().replace(/\s+/g, ' '); }
+function cleanName(n){ return n.trim().replace(/\s+/g, ' '); }
+function currentName(){ return cleanName($('asgName').value); }
+function currentTitle(){
+  const k = nameKey(currentName());
+  const c = commanders.find(x => nameKey(x.name) === k);
+  return c ? (c.title || '') : '';
 }
 
-function tryLogin(){
-  const c = commanders.find(x => x.id === $('loginUser').value);
-  const pin = $('loginPin').value.trim();
-  if(!c) return;
-  if(!pin){ $('loginMsg').textContent = 'Vui lòng nhập mã PIN.'; return; }
-  if(pinHash(c.id, pin) !== c.pinHash){
-    $('loginMsg').textContent = 'Sai mã PIN, vui lòng thử lại.';
-    $('loginPin').value = ''; $('loginPin').focus();
+function subscribeMine(){
+  if(unsubMine){ unsubMine(); unsubMine = null; }
+  const name = currentName();
+  if(!name){
+    myAssignments = [];
+    $('myList').innerHTML = '<div class="empty">Nhập tên của bạn ở trên để xem các việc bạn đã giao.</div>';
     return;
   }
-  setStored(LOGIN_KEY, JSON.stringify({ id:c.id, h:c.pinHash }));
-  enter(c);
-}
-
-function logout(){
-  setStored(LOGIN_KEY, null);
-  if(unsubMine) unsubMine(); if(unsubLoad) unsubLoad();
-  unsubMine = unsubLoad = null; me = null; myAssignments = [];
-  showLogin();
-}
-
-function enter(c){
-  me = c;
-  $('loading').hidden = true;
-  $('loginCard').hidden = true;
-  $('mainArea').hidden = false;
-  const who = $('whoami');
-  who.hidden = false;
-  who.innerHTML = `Xin chào, <b>${escapeHtml(c.name)}</b>${c.title ? ' (' + escapeHtml(c.title) + ')' : ''}<button id="logoutBtn">Đăng xuất</button>`;
-  $('logoutBtn').onclick = logout;
-  $('asgDue').min = todayStr();
-
-  if(unsubLoad) unsubLoad();
-  unsubLoad = db.collection('kv').doc('public_workload').onSnapshot(snap => {
-    try{ workload = snap.exists ? JSON.parse(snap.data().value) : null; }catch(e){ workload = null; }
-    renderLoad();
-  }, () => { workload = null; renderLoad(); });
-
-  if(unsubMine) unsubMine();
-  unsubMine = db.collection('assignments').where('byId', '==', c.id).onSnapshot({ includeMetadataChanges:true }, snap => {
+  me = { id:nameKey(name), name, title:currentTitle() };
+  unsubMine = db.collection('assignments').where('byId', '==', me.id).onSnapshot({ includeMetadataChanges:true }, snap => {
     myAssignments = snap.docs.map(d => ({ ...d.data(), _pending: d.metadata.hasPendingWrites }));
     renderMine();
   }, err => {
     $('myList').innerHTML = `<div class="msg err">Không tải được danh sách việc đã giao (${escapeHtml(err.code || err.message)}).</div>`;
   });
+}
+let nameTimer = null;
+function onNameChanged(){
+  setStored(NAME_KEY, currentName());
+  clearTimeout(nameTimer);
+  nameTimer = setTimeout(subscribeMine, 350);
 }
 
 // ---------- Khối lượng việc ----------
@@ -428,6 +371,10 @@ function renderMine(){
 function setMsg(text, cls){ const m = $('asgMsg'); m.textContent = text; m.className = 'msg ' + (cls || ''); }
 
 async function submitAssignment(){
+  const name = currentName();
+  if(!name){ setMsg('Vui lòng nhập tên của bạn (người giao việc).', 'err'); $('asgName').focus(); return; }
+  me = { id:nameKey(name), name, title:currentTitle() };
+  if(!unsubMine) subscribeMine();
   const text = $('asgText').value.trim();
   const due = $('asgDue').value;
   if(!text){ setMsg('Vui lòng nhập nội dung việc.', 'err'); $('asgText').focus(); return; }
@@ -468,24 +415,28 @@ async function init(){
     $('loading').textContent = 'Không tải được dịch vụ lưu trữ (Firebase). Kiểm tra kết nối mạng rồi tải lại trang.';
     return;
   }
+  // Danh sách tên gợi ý (không bắt buộc): nếu đọc lỗi vẫn dùng được bằng cách gõ tên.
   try{
     const list = await kvGet('commanders');
     commanders = Array.isArray(list) ? list : [];
-  }catch(e){
-    $('loading').textContent = 'Không đọc được danh sách tài khoản (' + (e.code || e.message) + '). Kiểm tra mạng rồi tải lại trang.';
-    return;
-  }
-  // Tự đăng nhập lại nếu máy này đã đăng nhập và PIN chưa bị đổi.
-  let saved = null;
-  try{ saved = JSON.parse(getStored(LOGIN_KEY) || 'null'); }catch(e){}
-  const c = saved && commanders.find(x => x.id === saved.id && x.pinHash === saved.h);
-  if(c) enter(c); else { if(saved) setStored(LOGIN_KEY, null); showLogin(); }
+  }catch(e){ commanders = []; }
+  $('nameList').innerHTML = commanders.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.title || '')}</option>`).join('');
+
+  $('loading').hidden = true;
+  $('mainArea').hidden = false;
+  $('asgDue').min = todayStr();
+  $('asgName').value = getStored(NAME_KEY) || '';
+
+  unsubLoad = db.collection('kv').doc('public_workload').onSnapshot(snap => {
+    try{ workload = snap.exists ? JSON.parse(snap.data().value) : null; }catch(e){ workload = null; }
+    renderLoad();
+  }, () => { workload = null; renderLoad(); });
+  subscribeMine();
 }
 
-$('loginBtn').onclick = tryLogin;
-$('loginPin').addEventListener('keydown', e => { if(e.key === 'Enter') tryLogin(); });
+$('asgName').addEventListener('input', onNameChanged);
 $('asgBtn').onclick = submitAssignment;
-$('asgDue').addEventListener('change', () => { if(me) renderLoad(); });
+$('asgDue').addEventListener('change', renderLoad);
 init();
 </script>
 </body>

@@ -1763,14 +1763,13 @@
         <input type="text" id="cmdLinkInput" readonly>
         <button class="btn" id="cmdCopyBtn">Sao chép</button>
       </div>
-      <div class="cmd-hint">Chỉ huy mở link, chọn tên mình, nhập mã PIN rồi bấm <b>Giao việc</b>. Việc giao tự hiện trong sổ này, ghi rõ người giao và hạn xong; chỉ huy cũng xem được khối lượng việc anh đang làm (không thấy mục Việc cá nhân và ghi chú).</div>
-      <div class="modal-sub">Tài khoản chỉ huy</div>
+      <div class="cmd-hint">Chỉ huy mở link, chọn hoặc gõ tên mình rồi bấm <b>Giao việc</b> (không cần mật khẩu). Việc giao tự hiện trong sổ này, ghi rõ người giao và hạn xong; chỉ huy cũng xem được khối lượng việc anh đang làm (không thấy mục Việc cá nhân và ghi chú). Ai có link đều giao được.</div>
+      <div class="modal-sub">Tên gợi ý cho chỉ huy chọn nhanh</div>
       <div id="cmdList"></div>
       <div class="cmd-add">
-        <input type="text" id="cmdNewName" placeholder="Tên chỉ huy (vd Đ/c Hùng)" maxlength="40">
+        <input type="text" id="cmdNewName" placeholder="Tên (vd Đ/c Hùng)" maxlength="40">
         <input type="text" id="cmdNewTitle" placeholder="Chức vụ (không bắt buộc)" maxlength="40">
-        <input type="text" id="cmdNewPin" placeholder="Mã PIN (ít nhất 4 ký tự)" maxlength="20" autocomplete="off">
-        <button class="btn" id="cmdAddBtn">+ Thêm chỉ huy</button>
+        <button class="btn" id="cmdAddBtn">+ Thêm tên</button>
       </div>
     </div>
   </div>
@@ -2140,7 +2139,8 @@ async function loadTasks(){
 }
 
 // ===== Chỉ huy giao việc =====
-// Chỉ huy dùng trang riêng giaoviec.html: gửi việc vào collection 'assignments'. Sổ này tự nhận
+// Chỉ huy mở link giaoviec.html, chọn hoặc gõ tên mình rồi giao việc (không cần mật khẩu):
+// việc được gửi vào collection 'assignments'. Sổ này tự nhận
 // việc đó vào danh sách (id cố định 'asg_<id giao>' nên nhiều máy cùng nhận cũng không bị trùng),
 // rồi báo ngược trạng thái (đã nhận / tiến độ / xong) để chỉ huy theo dõi.
 // Đồng thời đăng một bản "khối lượng việc" đã lọc (không có việc cá nhân, không có ghi chú)
@@ -2153,20 +2153,6 @@ let assignmentsSubscribed = false;
 let asgBootSynced = false;
 let unseenAssignments = [];
 const asgSynced = {}; // id giao việc -> trạng thái đã có trên Firestore
-
-// Băm mã PIN (cyrb53 + muối theo tài khoản). Chỉ để không lưu PIN dạng chữ — KHÔNG phải bảo mật thật.
-function pinHash(id, pin){
-  const str = 'soct:' + id + ':' + pin;
-  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
-  for(let i=0, ch; i<str.length; i++){
-    ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
-  return (4294967296 * (2097151 & h2) + (h1>>>0)).toString(36);
-}
 
 function assignedTagHtml(t){
   if(!t.assignedBy) return '';
@@ -2269,13 +2255,6 @@ function showAssignBanner(){
 }
 
 // ----- Quản lý tài khoản chỉ huy -----
-async function ownerAllowed(){
-  if(personalUnlocked || !personalPwHash) return true;
-  const pw = prompt('Nhập mật khẩu (cùng mật khẩu mục Việc cá nhân) để quản lý tài khoản chỉ huy:');
-  if(pw === null) return false;
-  if(simpleHash(pw) !== personalPwHash){ alert('Sai mật khẩu.'); return false; }
-  return true;
-}
 async function loadCommanders(){
   try{
     const r = await window.storage.get(COMMANDERS_KEY);
@@ -2290,26 +2269,18 @@ function saveCommanders(){
 function renderCommanders(){
   const box = document.getElementById('cmdList');
   if(!commanders.length){
-    box.innerHTML = '<div class="empty" style="padding:8px 0;">Chưa có tài khoản nào — thêm chỉ huy ở bên dưới.</div>';
+    box.innerHTML = '<div class="empty" style="padding:8px 0;">Chưa có tên nào — thêm ở bên dưới (không bắt buộc, chỉ huy vẫn tự gõ tên được).</div>';
     return;
   }
   box.innerHTML = commanders.map(c=>`
     <div class="cmd-item" data-id="${escapeAttr(c.id)}">
       <div class="cmd-name">${escapeHtml(c.name)}${c.title ? `<small>${escapeHtml(c.title)}</small>` : ''}</div>
-      <button class="btn ghost" data-act="pin">Đổi PIN</button>
       <button class="btn ghost danger" data-act="del">Xóa</button>
     </div>`).join('');
   box.querySelectorAll('.cmd-item').forEach(row=>{
     const c = commanders.find(x=>x.id === row.dataset.id);
-    row.querySelector('[data-act="pin"]').onclick = ()=>{
-      const pin = prompt('Mã PIN mới cho ' + c.name + ' (ít nhất 4 ký tự):');
-      if(pin === null) return;
-      if(pin.trim().length < 4){ alert('Mã PIN cần ít nhất 4 ký tự.'); return; }
-      c.pinHash = pinHash(c.id, pin.trim());
-      saveCommanders();
-    };
     row.querySelector('[data-act="del"]').onclick = ()=>{
-      if(!confirm('Xóa tài khoản "' + c.name + '"? Việc đã giao trước đó vẫn giữ nguyên.')) return;
+      if(!confirm('Xóa tên "' + c.name + '" khỏi danh sách gợi ý? Việc đã giao trước đó vẫn giữ nguyên.')) return;
       commanders = commanders.filter(x=>x.id !== c.id);
       saveCommanders();
     };
@@ -2318,17 +2289,14 @@ function renderCommanders(){
 function addCommander(){
   const name = document.getElementById('cmdNewName').value.trim();
   const title = document.getElementById('cmdNewTitle').value.trim();
-  const pin = document.getElementById('cmdNewPin').value.trim();
   if(!name){ alert('Nhập tên chỉ huy.'); return; }
-  if(pin.length < 4){ alert('Mã PIN cần ít nhất 4 ký tự.'); return; }
-  if(commanders.some(c=>c.name.toLowerCase() === name.toLowerCase())){ alert('Đã có tài khoản trùng tên này.'); return; }
+  if(commanders.some(c=>c.name.toLowerCase() === name.toLowerCase())){ alert('Tên này đã có trong danh sách.'); return; }
   const id = 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
-  commanders.push({ id, name, title, pinHash: pinHash(id, pin) });
-  ['cmdNewName','cmdNewTitle','cmdNewPin'].forEach(i=> document.getElementById(i).value = '');
+  commanders.push({ id, name, title });
+  ['cmdNewName','cmdNewTitle'].forEach(i=> document.getElementById(i).value = '');
   saveCommanders();
 }
 async function openCommanderModal(){
-  if(!(await ownerAllowed())) return;
   await loadCommanders();
   document.getElementById('cmdLinkInput').value = new URL('giaoviec.html', location.href).href;
   renderCommanders();
