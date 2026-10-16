@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1c231a">
+<title>Giao việc — Sổ công tác</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<style>
+  :root{
+    --paper:#eef1e7; --ink:#1c231a; --ink-soft:#565f4e; --line:#c3c0a0; --line-soft:#dfe0cd;
+    --accent:#c2410c; --accent-soft:#ea580c;
+    --overdue:#dc2626; --overdue-bg:#fee2df; --overdue-strong:#b91c1c;
+    --today:#0f7a52; --today-bg:#d9f2e4; --today-strong:#065f38;
+    --upcoming:#b45309; --done:#8a8578; --card:#fffefb; --header-band:#1c231a;
+    --blue:#2f6fb5; --blue-strong:#1f4e85; --blue-bg:#eaf2fd;
+    --amber-bg:#fdf3dc; --amber:#8a5a00;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    background-image:radial-gradient(circle at 1px 1px, rgba(34,40,31,0.035) 1px, transparent 0);
+    background-size:22px 22px;
+    font-family:"Inter","Segoe UI","Helvetica Neue",Arial,"Noto Sans",sans-serif;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:0 16px 60px;}
+  header{
+    background:var(--header-band); color:#fdfaf3; border-bottom:3px solid var(--accent);
+    padding:16px 18px; margin:0 -16px 20px;
+  }
+  header .inner{max-width:760px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  h1{font-size:1.4rem; margin:0; font-weight:700;}
+  h1::before{content:"● "; color:var(--accent-soft);}
+  .subtitle{color:#c9c2a4; font-size:0.84rem; margin-top:3px;}
+  .whoami{font-size:0.85rem; text-align:right;}
+  .whoami button{
+    margin-left:8px; background:none; border:1px solid rgba(253,250,243,0.4); color:#fdfaf3;
+    border-radius:5px; padding:4px 10px; font-family:inherit; font-size:0.78rem; cursor:pointer;
+  }
+
+  .card{background:var(--card); border:1px solid var(--line); padding:14px 16px; margin-bottom:18px;}
+  .card h2{
+    margin:0 0 12px; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft);
+    display:flex; align-items:center; gap:8px;
+  }
+  .card h2::after{content:""; flex:1; border-bottom:2px solid var(--line);}
+  label{display:block; font-size:0.8rem; font-weight:600; color:var(--ink-soft); margin:12px 0 4px;}
+  input[type=text], input[type=password], input[type=date], select, textarea{
+    width:100%; border:1.5px solid var(--line); background:#fff; color:var(--ink);
+    font-family:inherit; font-size:1rem; padding:10px 12px; border-radius:4px;
+  }
+  textarea{min-height:84px; resize:vertical;}
+  input:focus, select:focus, textarea:focus{outline:2px solid var(--blue); outline-offset:-1px; border-color:var(--blue);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .btn-primary{
+    width:100%; margin-top:16px; min-height:48px;
+    background:linear-gradient(135deg, var(--accent-soft), var(--accent)); color:#fff; border:none; border-radius:4px;
+    font-family:inherit; font-size:1rem; font-weight:700; cursor:pointer;
+    box-shadow:0 2px 6px rgba(194,65,12,0.3);
+  }
+  .btn-primary:disabled{opacity:0.6; cursor:default;}
+  .msg{margin-top:10px; font-size:0.86rem; font-weight:600; min-height:1.2em;}
+  .msg.err{color:var(--overdue-strong);} .msg.ok{color:var(--today-strong);} .msg.warn{color:var(--amber);}
+  .hint{font-size:0.78rem; color:var(--ink-soft); margin-top:6px; line-height:1.45;}
+
+  /* Khối lượng việc */
+  .load-badge{
+    display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:1rem;
+    padding:8px 14px; border-radius:6px; border:1.5px solid;
+  }
+  .load-light{background:var(--today-bg); color:var(--today-strong); border-color:var(--today);}
+  .load-mid{background:var(--amber-bg); color:var(--amber); border-color:#e0a83c;}
+  .load-heavy{background:var(--overdue-bg); color:var(--overdue-strong); border-color:var(--overdue);}
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:12px 0;}
+  .stat{background:var(--paper); border:1px solid var(--line-soft); border-left:4px solid var(--ink-soft); padding:8px 10px;}
+  .stat b{display:block; font-size:1.4rem; line-height:1.1; font-variant-numeric:tabular-nums;}
+  .stat span{font-size:0.66rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft);}
+  .stat.s-over{border-left-color:var(--overdue); background:var(--overdue-bg);}
+  .stat.s-today{border-left-color:var(--today); background:var(--today-bg);}
+  .stat.s-week{border-left-color:var(--upcoming);}
+  .updated{font-size:0.74rem; color:var(--ink-soft);}
+
+  .days-title{font-size:0.8rem; font-weight:600; color:var(--ink-soft); margin:14px 0 6px;}
+  .days{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+  .day{
+    border:1px solid var(--line-soft); background:var(--paper); padding:5px 2px; text-align:center;
+    cursor:pointer; font-family:inherit; color:var(--ink);
+  }
+  .day small{display:block; font-size:0.62rem; color:var(--ink-soft); text-transform:uppercase;}
+  .day .dn{display:block; font-size:0.8rem; font-weight:700;}
+  .day .dc{display:block; font-size:0.74rem; font-weight:700; margin-top:2px; min-height:1.1em;}
+  .day.c1{background:#fdf3dc;} .day.c2{background:#fbe0b4;} .day.c3{background:#f8c7a0;}
+  .day.sel{outline:2px solid var(--accent); outline-offset:-2px;}
+
+  .task-card{
+    border:1px solid var(--line-soft); border-left:4px solid var(--ink-soft);
+    background:var(--paper); padding:9px 11px; margin-top:8px;
+  }
+  .task-card.over{border-left-color:var(--overdue); background:var(--overdue-bg);}
+  .task-card.today{border-left-color:var(--today); background:var(--today-bg);}
+  .task-card .tt{font-weight:600; line-height:1.4; word-break:break-word;}
+  .task-card .meta{display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:5px; font-size:0.78rem; color:var(--ink-soft);}
+  .due-over{color:var(--overdue-strong); font-weight:700;} .due-today{color:var(--today-strong); font-weight:700;}
+  .bar{height:6px; background:var(--line-soft); border:1px solid var(--line); margin-top:6px; position:relative;}
+  .bar i{display:block; height:100%; background:linear-gradient(90deg,#fb923c,var(--accent));}
+  .tag-by{display:inline-block; font-size:0.7rem; font-weight:700; color:var(--blue-strong); background:var(--blue-bg); border:1px solid #c9dcf5; border-radius:8px; padding:0 7px;}
+  details summary{cursor:pointer; font-size:0.84rem; font-weight:700; color:var(--ink-soft); margin-top:14px;}
+
+  .st{display:inline-block; font-size:0.74rem; font-weight:700; border-radius:10px; padding:1px 9px; border:1px solid;}
+  .st-sent{background:var(--amber-bg); color:var(--amber); border-color:#e0a83c;}
+  .st-received{background:var(--blue-bg); color:var(--blue-strong); border-color:#c9dcf5;}
+  .st-done{background:var(--today-bg); color:var(--today-strong); border-color:var(--today);}
+  .st-gone{background:var(--line-soft); color:var(--ink-soft); border-color:var(--line);}
+  .recall{margin-left:auto; background:none; border:1px solid var(--line); border-radius:4px; font-family:inherit; font-size:0.74rem; font-weight:600; color:var(--ink-soft); padding:3px 9px; cursor:pointer;}
+  .recall:hover{border-color:var(--overdue); color:var(--overdue-strong);}
+  .empty{color:var(--ink-soft); font-size:0.9rem; font-style:italic; padding:6px 0;}
+  .center-note{text-align:center; padding:30px 10px; color:var(--ink-soft);}
+  [hidden]{display:none !important;}
+
+  @media (max-width:520px){
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .row2{grid-template-columns:1fr;}
+    .whoami{text-align:left;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="inner">
+      <div>
+        <h1>Giao việc</h1>
+        <div class="subtitle">Sổ công tác — giao việc, xem khối lượng việc đang làm</div>
+      </div>
+      <div class="whoami" id="whoami" hidden></div>
+    </div>
+  </header>
+
+  <div class="center-note" id="loading">Đang tải…</div>
+
+  <!-- Đăng nhập -->
+  <section class="card" id="loginCard" hidden>
+    <h2>Đăng nhập chỉ huy</h2>
+    <label for="loginUser">Tài khoản</label>
+    <select id="loginUser"></select>
+    <label for="loginPin">Mã PIN</label>
+    <input type="password" id="loginPin" inputmode="numeric" autocomplete="off" placeholder="Nhập mã PIN">
+    <button class="btn-primary" id="loginBtn">Đăng nhập</button>
+    <div class="msg err" id="loginMsg"></div>
+    <div class="hint" id="loginEmpty" hidden>Chưa có tài khoản chỉ huy nào. Liên hệ người nhận việc để được tạo tài khoản.</div>
+  </section>
+
+  <!-- Màn chính -->
+  <div id="mainArea" hidden>
+    <section class="card">
+      <h2>Giao việc mới</h2>
+      <label for="asgText">Nội dung việc cần làm</label>
+      <textarea id="asgText" placeholder="Ví dụ: Báo cáo kết quả rà soát CSKV trên địa bàn…" maxlength="1000"></textarea>
+      <div class="row2">
+        <div>
+          <label for="asgDue">Hạn phải xong</label>
+          <input type="date" id="asgDue">
+        </div>
+        <div>
+          <label for="asgPriority">Mức độ</label>
+          <select id="asgPriority">
+            <option value="normal">Bình thường</option>
+            <option value="urgent">Gấp</option>
+          </select>
+        </div>
+      </div>
+      <label for="asgNote">Ghi chú thêm (không bắt buộc)</label>
+      <input type="text" id="asgNote" placeholder="Yêu cầu cụ thể, đầu mối liên hệ…" maxlength="300">
+      <button class="btn-primary" id="asgBtn">Giao việc</button>
+      <div class="msg" id="asgMsg"></div>
+      <div class="hint">Việc giao sẽ hiện trên sổ của người nhận kèm tên bạn và hạn xong. Chọn ngày ở bảng khối lượng bên dưới để chọn nhanh hạn ít việc.</div>
+    </section>
+
+    <section class="card">
+      <h2>Đang làm những việc gì</h2>
+      <div id="loadSummary"></div>
+    </section>
+
+    <section class="card">
+      <h2>Việc tôi đã giao</h2>
+      <div id="myList"></div>
+    </section>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// Trang giao việc dành cho chỉ huy. Dùng chung Firestore với sổ công tác (nhacviec.html).
+// Mã PIN chỉ là cổng ẩn/hiện + ghi nhận tên người giao, KHÔNG phải bảo mật mạnh.
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDqlIXfZRBiKG2egYbNqTpGUfiauaowMN0",
+  authDomain: "so-cong-tac-cuong.firebaseapp.com",
+  projectId: "so-cong-tac-cuong",
+  storageBucket: "so-cong-tac-cuong.firebasestorage.app",
+  messagingSenderId: "811896483915",
+  appId: "1:811896483915:web:b7c178c22484b2923c5dce"
+};
+const LOGIN_KEY = 'giaoviec_login';
+// Ngưỡng đánh giá khối lượng (số việc có thời hạn đang làm).
+const LOAD_MEDIUM_AT = 5, LOAD_HEAVY_AT = 10;
+const SEND_SLOW_MS = 8000;
+
+let db = null;
+try{
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+}catch(e){ db = null; }
+
+let commanders = [];
+let me = null;
+let workload = null;      // { updatedAt, tasks:[...] } hoặc null nếu chưa có
+let myAssignments = [];
+let unsubMine = null, unsubLoad = null;
+
+const $ = id => document.getElementById(id);
+function escapeHtml(str){ return String(str ?? '').replace(/[&<>]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch])); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function dateStr(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+function todayStr(){ return dateStr(new Date()); }
+function formatDateVN(s){ const [y,m,d] = s.split('-'); return `${d}/${m}/${y}`; }
+function addDays(s, n){ const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + n); return dateStr(d); }
+function daysBetween(s){ return Math.round((new Date(s + 'T00:00:00') - new Date(todayStr() + 'T00:00:00')) / 86400000); }
+function getStored(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function setStored(k, v){ try{ v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); }catch(e){} }
+
+// Phải giống hệt hàm pinHash trong nhacviec.html.
+function pinHash(id, pin){
+  const str = 'soct:' + id + ':' + pin;
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for(let i=0, ch; i<str.length; i++){
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1>>>0)).toString(36);
+}
+
+async function kvGet(key){
+  const snap = await db.collection('kv').doc(key).get();
+  return snap.exists ? JSON.parse(snap.data().value) : null;
+}
+
+// ---------- Đăng nhập ----------
+function showLogin(msg){
+  $('loading').hidden = true;
+  $('mainArea').hidden = true;
+  $('whoami').hidden = true;
+  $('loginCard').hidden = false;
+  const sel = $('loginUser');
+  sel.innerHTML = commanders.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.title ? ' — ' + escapeHtml(c.title) : ''}</option>`).join('');
+  $('loginEmpty').hidden = commanders.length > 0;
+  $('loginBtn').disabled = commanders.length === 0;
+  $('loginMsg').textContent = msg || '';
+  $('loginPin').value = '';
+}
+
+function tryLogin(){
+  const c = commanders.find(x => x.id === $('loginUser').value);
+  const pin = $('loginPin').value.trim();
+  if(!c) return;
+  if(!pin){ $('loginMsg').textContent = 'Vui lòng nhập mã PIN.'; return; }
+  if(pinHash(c.id, pin) !== c.pinHash){
+    $('loginMsg').textContent = 'Sai mã PIN, vui lòng thử lại.';
+    $('loginPin').value = ''; $('loginPin').focus();
+    return;
+  }
+  setStored(LOGIN_KEY, JSON.stringify({ id:c.id, h:c.pinHash }));
+  enter(c);
+}
+
+function logout(){
+  setStored(LOGIN_KEY, null);
+  if(unsubMine) unsubMine(); if(unsubLoad) unsubLoad();
+  unsubMine = unsubLoad = null; me = null; myAssignments = [];
+  showLogin();
+}
+
+function enter(c){
+  me = c;
+  $('loading').hidden = true;
+  $('loginCard').hidden = true;
+  $('mainArea').hidden = false;
+  const who = $('whoami');
+  who.hidden = false;
+  who.innerHTML = `Xin chào, <b>${escapeHtml(c.name)}</b>${c.title ? ' (' + escapeHtml(c.title) + ')' : ''}<button id="logoutBtn">Đăng xuất</button>`;
+  $('logoutBtn').onclick = logout;
+  $('asgDue').min = todayStr();
+
+  if(unsubLoad) unsubLoad();
+  unsubLoad = db.collection('kv').doc('public_workload').onSnapshot(snap => {
+    try{ workload = snap.exists ? JSON.parse(snap.data().value) : null; }catch(e){ workload = null; }
+    renderLoad();
+  }, () => { workload = null; renderLoad(); });
+
+  if(unsubMine) unsubMine();
+  unsubMine = db.collection('assignments').where('byId', '==', c.id).onSnapshot({ includeMetadataChanges:true }, snap => {
+    myAssignments = snap.docs.map(d => ({ ...d.data(), _pending: d.metadata.hasPendingWrites }));
+    renderMine();
+  }, err => {
+    $('myList').innerHTML = `<div class="msg err">Không tải được danh sách việc đã giao (${escapeHtml(err.code || err.message)}).</div>`;
+  });
+}
+
+// ---------- Khối lượng việc ----------
+function loadLevel(tasksOnly, overdue){
+  const n = tasksOnly.length;
+  if(n >= LOAD_HEAVY_AT || overdue >= 3) return { cls:'load-heavy', icon:'🔴', text:'Nặng — nên hạn chế giao thêm' };
+  if(n >= LOAD_MEDIUM_AT || overdue >= 1) return { cls:'load-mid', icon:'🟡', text:'Vừa — cân nhắc hạn xong' };
+  return { cls:'load-light', icon:'🟢', text:'Nhẹ — có thể nhận thêm' };
+}
+
+function dueLabel(t){
+  if(!t.due) return '<span>Chưa có hạn</span>';
+  const d = daysBetween(t.due);
+  if(d < 0) return `<span class="due-over">Quá hạn ${-d} ngày (${formatDateVN(t.due)})</span>`;
+  if(d === 0) return `<span class="due-today">Hạn hôm nay</span>`;
+  return `<span>Hạn ${formatDateVN(t.due)} (còn ${d} ngày)</span>`;
+}
+
+function taskCard(t){
+  const d = t.due ? daysBetween(t.due) : null;
+  const cls = d !== null && d < 0 ? ' over' : (d === 0 ? ' today' : '');
+  return `<div class="task-card${cls}">
+    <div class="tt">${escapeHtml(t.text)}</div>
+    <div class="meta">${dueLabel(t)}${t.recipient ? `<span>📍 ${escapeHtml(t.recipient)}</span>` : ''}${t.by ? `<span class="tag-by">Giao bởi ${escapeHtml(t.by)}</span>` : ''}</div>
+    <div class="bar"><i style="width:${Math.min(100, t.progress || 0)}%"></i></div>
+  </div>`;
+}
+
+function renderLoad(){
+  const box = $('loadSummary');
+  if(!workload || !Array.isArray(workload.tasks)){
+    box.innerHTML = '<div class="empty">Chưa có dữ liệu — người nhận việc chưa mở sổ công tác lần nào.</div>';
+    return;
+  }
+  const today = todayStr();
+  const all = workload.tasks;
+  const once = all.filter(t => t.type === 'task').sort((a,b) => (a.due || '9999').localeCompare(b.due || '9999'));
+  const recurring = all.filter(t => t.type === 'recurring');
+  const overdue = once.filter(t => t.due && t.due < today).length;
+  const dueToday = once.filter(t => t.due === today).length;
+  const week = once.filter(t => t.due && t.due > today && t.due <= addDays(today, 7)).length;
+  const lv = loadLevel(once, overdue);
+
+  const selected = $('asgDue').value;
+  let strip = '';
+  for(let i = 0; i < 14; i++){
+    const ds = addDays(today, i);
+    const c = once.filter(t => t.due === ds).length;
+    const wd = ['CN','T2','T3','T4','T5','T6','T7'][new Date(ds + 'T00:00:00').getDay()];
+    const [, m, d] = ds.split('-');
+    strip += `<button type="button" class="day${c >= 3 ? ' c3' : c === 2 ? ' c2' : c === 1 ? ' c1' : ''}${ds === selected ? ' sel' : ''}" data-date="${ds}" title="${c} việc đến hạn ngày ${d}/${m}">
+      <small>${wd}</small><span class="dn">${d}/${m}</span><span class="dc">${c || '·'}</span></button>`;
+  }
+
+  const upd = workload.updatedAt ? new Date(workload.updatedAt) : null;
+  const updText = upd ? `${pad(upd.getHours())}:${pad(upd.getMinutes())} ${pad(upd.getDate())}/${pad(upd.getMonth()+1)}` : '—';
+
+  box.innerHTML = `
+    <div class="load-badge ${lv.cls}"><span>${lv.icon}</span><span>${lv.text}</span></div>
+    <div class="stats">
+      <div class="stat"><b>${once.length}</b><span>Việc có thời hạn</span></div>
+      <div class="stat s-over"><b>${overdue}</b><span>Quá hạn</span></div>
+      <div class="stat s-today"><b>${dueToday}</b><span>Đến hạn hôm nay</span></div>
+      <div class="stat s-week"><b>${week}</b><span>Trong 7 ngày tới</span></div>
+    </div>
+    <div class="days-title">Số việc đến hạn mỗi ngày (14 ngày tới) — bấm để chọn làm hạn xong</div>
+    <div class="days">${strip}</div>
+    <div class="days-title">Danh sách việc có thời hạn đang làm (${once.length})</div>
+    ${once.length ? once.map(taskCard).join('') : '<div class="empty">Hiện không có việc có thời hạn nào đang làm.</div>'}
+    ${recurring.length ? `<details><summary>Việc thường xuyên (${recurring.length})</summary>${recurring.map(taskCard).join('')}</details>` : ''}
+    <div class="updated" style="margin-top:12px;">Cập nhật lần cuối: ${updText}. Số liệu theo lần gần nhất người nhận việc mở/sửa sổ.</div>`;
+
+  box.querySelectorAll('.day').forEach(b => b.onclick = () => {
+    $('asgDue').value = b.dataset.date;
+    renderLoad();
+    $('asgText').focus();
+  });
+}
+
+// ---------- Việc tôi đã giao ----------
+function statusBadge(a){
+  if(a._pending) return '<span class="st st-sent">⏫ Đang gửi…</span>';
+  if(a.status === 'sent') return '<span class="st st-sent">⏳ Chờ nhận</span>';
+  if(a.status === 'received') return `<span class="st st-received">🔧 Đang làm — ${a.progress || 0}%</span>`;
+  if(a.status === 'done') return `<span class="st st-done">✅ Đã xong${a.completedAt ? ' ' + formatDateVN(a.completedAt) : ''}</span>`;
+  if(a.status === 'removed') return '<span class="st st-gone">🗑 Đã gỡ khỏi sổ</span>';
+  if(a.status === 'cancelled') return '<span class="st st-gone">↩ Đã thu hồi</span>';
+  return '';
+}
+
+function renderMine(){
+  const box = $('myList');
+  if(!myAssignments.length){ box.innerHTML = '<div class="empty">Bạn chưa giao việc nào.</div>'; return; }
+  const list = myAssignments.slice().sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const today = todayStr();
+  box.innerHTML = list.map(a => {
+    const due = a.dueNow !== undefined && a.dueNow !== null ? a.dueNow : a.due;
+    const open = a.status === 'sent' || a.status === 'received';
+    const over = open && due && due < today;
+    const changed = due && a.due && due !== a.due ? ` <span>(hạn gốc ${formatDateVN(a.due)})</span>` : '';
+    return `<div class="task-card${over ? ' over' : ''}" data-id="${escapeHtml(a.id)}">
+      <div class="tt">${a.priority === 'urgent' ? '🔥 <b>GẤP</b> · ' : ''}${escapeHtml(a.text)}</div>
+      <div class="meta">${due ? `<span class="${over ? 'due-over' : ''}">Hạn ${formatDateVN(due)}${changed}</span>` : ''}<span>Giao ngày ${a.createdDate ? formatDateVN(a.createdDate) : '—'}</span></div>
+      <div class="meta" style="align-items:center;">${statusBadge(a)}${a.status === 'sent' && !a._pending ? '<button class="recall" data-act="recall">Thu hồi</button>' : ''}</div>
+      ${a.status === 'received' || a.status === 'done' ? `<div class="bar"><i style="width:${a.status === 'done' ? 100 : (a.progress || 0)}%"></i></div>` : ''}
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-act="recall"]').forEach(btn => btn.onclick = () => {
+    const id = btn.closest('.task-card').dataset.id;
+    if(!confirm('Thu hồi việc này? Người nhận việc sẽ không nhận nữa.')) return;
+    db.collection('assignments').doc(id).update({ status:'cancelled', updatedAt:Date.now() })
+      .catch(() => alert('Không thu hồi được. Có thể việc đã được nhận — tải lại trang để xem trạng thái mới.'));
+  });
+}
+
+// ---------- Giao việc ----------
+function setMsg(text, cls){ const m = $('asgMsg'); m.textContent = text; m.className = 'msg ' + (cls || ''); }
+
+async function submitAssignment(){
+  const text = $('asgText').value.trim();
+  const due = $('asgDue').value;
+  if(!text){ setMsg('Vui lòng nhập nội dung việc.', 'err'); $('asgText').focus(); return; }
+  if(!due){ setMsg('Vui lòng chọn hạn phải xong.', 'err'); $('asgDue').focus(); return; }
+  if(due < todayStr()){ setMsg('Hạn xong không được là ngày đã qua.', 'err'); return; }
+
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const data = {
+    id, byId:me.id, byName:me.name, byTitle:me.title || '',
+    text, due, dueNow:due, priority:$('asgPriority').value, note:$('asgNote').value.trim(),
+    status:'sent', progress:0, completedAt:null,
+    createdAt:Date.now(), createdDate:todayStr(), updatedAt:Date.now()
+  };
+  const btn = $('asgBtn');
+  btn.disabled = true;
+  setMsg('Đang gửi…', '');
+  let slow = setTimeout(() => setMsg('Chưa gửi được xong — có thể đang mất mạng. Đừng đóng trang, việc sẽ tự gửi khi có mạng.', 'warn'), SEND_SLOW_MS);
+  try{
+    await db.collection('assignments').doc(id).set(data);
+    clearTimeout(slow);
+    setMsg('✅ Đã giao việc. Việc sẽ hiện trên sổ của người nhận ngay.', 'ok');
+    $('asgText').value = ''; $('asgNote').value = ''; $('asgDue').value = ''; $('asgPriority').value = 'normal';
+    renderLoad();
+  }catch(e){
+    clearTimeout(slow);
+    const denied = e && e.code === 'permission-denied';
+    setMsg(denied
+      ? 'Không gửi được: Firestore chưa cho phép ghi vào mục "assignments" (cần chỉnh quy tắc Firestore — xem hướng dẫn của người nhận việc).'
+      : 'Không gửi được: ' + (e && (e.code || e.message) || 'lỗi không rõ') + '. Nội dung vẫn còn ở trên, bấm Giao việc để thử lại.', 'err');
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+// ---------- Khởi động ----------
+async function init(){
+  if(!db){
+    $('loading').textContent = 'Không tải được dịch vụ lưu trữ (Firebase). Kiểm tra kết nối mạng rồi tải lại trang.';
+    return;
+  }
+  try{
+    const list = await kvGet('commanders');
+    commanders = Array.isArray(list) ? list : [];
+  }catch(e){
+    $('loading').textContent = 'Không đọc được danh sách tài khoản (' + (e.code || e.message) + '). Kiểm tra mạng rồi tải lại trang.';
+    return;
+  }
+  // Tự đăng nhập lại nếu máy này đã đăng nhập và PIN chưa bị đổi.
+  let saved = null;
+  try{ saved = JSON.parse(getStored(LOGIN_KEY) || 'null'); }catch(e){}
+  const c = saved && commanders.find(x => x.id === saved.id && x.pinHash === saved.h);
+  if(c) enter(c); else { if(saved) setStored(LOGIN_KEY, null); showLogin(); }
+}
+
+$('loginBtn').onclick = tryLogin;
+$('loginPin').addEventListener('keydown', e => { if(e.key === 'Enter') tryLogin(); });
+$('asgBtn').onclick = submitAssignment;
+$('asgDue').addEventListener('change', () => { if(me) renderLoad(); });
+init();
+</script>
+</body>
+</html>

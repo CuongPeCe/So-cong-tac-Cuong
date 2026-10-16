@@ -845,6 +845,82 @@
     width:130px;
   }
 
+  /* ===== Việc do chỉ huy giao ===== */
+  .assigned-tag{
+    display:inline-flex; align-items:center; flex-wrap:wrap; gap:4px;
+    margin-top:4px;
+    font-size:0.76rem; font-weight:600;
+    color:#1f4e85;
+    background:#eaf2fd;
+    border:1px solid #c9dcf5;
+    border-radius:10px;
+    padding:2px 9px;
+  }
+  .assigned-tag .urgent{color:#fff; background:var(--overdue); border-radius:8px; padding:0 6px; font-size:0.68rem; letter-spacing:0.4px;}
+  .assign-banner{
+    background:#eaf2fd;
+    border:1.5px solid #2f6fb5;
+    border-left:6px solid #2f6fb5;
+    padding:12px 16px;
+    margin-bottom:16px;
+    font-size:0.9rem;
+    color:#1f4e85;
+  }
+  .assign-banner .ab-title{font-weight:700; margin-bottom:6px; font-size:0.95rem;}
+  .assign-banner .ab-item{margin:3px 0; word-break:break-word;}
+  .assign-banner .ab-urgent{background:var(--overdue); color:#fff; border-radius:8px; padding:0 6px; font-size:0.68rem; font-weight:700;}
+  .assign-banner .ab-actions{display:flex; gap:8px; margin-top:10px;}
+  .assign-banner button{
+    font-family:inherit; font-size:0.8rem; font-weight:700;
+    padding:6px 12px; border-radius:4px; cursor:pointer;
+    border:1px solid #2f6fb5; background:#fff; color:#1f4e85;
+  }
+  .assign-banner button.primary{background:#2f6fb5; color:#fff;}
+  .hdr-btn{
+    margin-top:8px;
+    background:rgba(253,250,243,0.1);
+    border:1px solid rgba(253,250,243,0.35);
+    color:#fdfaf3;
+    font-family:inherit; font-size:0.78rem; font-weight:600;
+    padding:5px 11px; border-radius:6px; cursor:pointer;
+  }
+  .hdr-btn:hover{background:rgba(253,250,243,0.2);}
+  .modal-backdrop{
+    position:fixed; inset:0; z-index:120;
+    background:rgba(20,24,30,0.5);
+    display:flex; align-items:center; justify-content:center;
+    padding:16px;
+  }
+  .modal-box{
+    background:var(--card);
+    width:100%; max-width:520px; max-height:88vh; overflow-y:auto;
+    border-top:4px solid var(--accent);
+    border-radius:6px;
+    box-shadow:0 12px 40px rgba(0,0,0,0.3);
+  }
+  .modal-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 16px 8px; font-size:1.02rem;
+  }
+  .modal-head button{background:none; border:none; font-size:1.6rem; line-height:1; color:var(--ink-soft); cursor:pointer;}
+  .modal-body{padding:0 16px 16px;}
+  .modal-sub{font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--ink-soft); margin:16px 0 6px;}
+  .cmd-link-row{display:flex; gap:6px;}
+  .cmd-link-row input{flex:1; min-width:0; padding:8px; border:1px solid var(--line); font-family:"Menlo","Consolas",monospace; font-size:0.74rem; background:#fff;}
+  .modal-body button.btn{
+    background:var(--accent); color:#fff; border:none; border-radius:4px;
+    font-family:inherit; font-size:0.82rem; font-weight:700; padding:8px 14px; cursor:pointer;
+  }
+  .modal-body button.btn.ghost{background:var(--line-soft); color:var(--ink-soft);}
+  .modal-body button.btn.danger:hover{background:var(--overdue); color:#fff;}
+  .cmd-hint{font-size:0.78rem; color:var(--ink-soft); margin-top:8px; line-height:1.45;}
+  .cmd-item{display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--line-soft);}
+  .cmd-item .cmd-name{flex:1; min-width:0; font-weight:600; word-break:break-word;}
+  .cmd-item .cmd-name small{display:block; font-weight:400; color:var(--ink-soft);}
+  .cmd-add{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px;}
+  .cmd-add input{padding:8px; border:1px solid var(--line); font-family:inherit; font-size:0.88rem; min-width:0;}
+  .cmd-add button{grid-column:1 / -1;}
+
   .empty{
     color:var(--ink-soft);
     font-size:0.9rem;
@@ -1483,6 +1559,7 @@
       <div>
         <h1>Sổ công tác</h1>
         <div class="subtitle">Danh sách việc cần làm — tự động nhắc theo hạn</div>
+        <button class="hdr-btn" id="cmdOpenBtn">👥 Chỉ huy giao việc</button>
       </div>
       <div class="clock-box">
         <div class="clock-time" id="clockTime">--:--:--</div>
@@ -1490,6 +1567,8 @@
       </div>
     </div>
   </header>
+
+  <div class="assign-banner" id="assignBanner" style="display:none;"></div>
 
   <div class="motivation-banner" id="motivationBanner">
     <span class="motivation-icon">🔥</span>
@@ -1674,6 +1753,28 @@
   </button>
 </nav>
 <div class="add-sheet-backdrop" id="addSheetBackdrop"></div>
+
+<div class="modal-backdrop" id="cmdModal" style="display:none;">
+  <div class="modal-box" role="dialog" aria-label="Chỉ huy giao việc">
+    <div class="modal-head"><b>👥 Chỉ huy giao việc</b><button id="cmdModalClose" aria-label="Đóng">&times;</button></div>
+    <div class="modal-body">
+      <div class="modal-sub" style="margin-top:4px;">Link gửi cho chỉ huy</div>
+      <div class="cmd-link-row">
+        <input type="text" id="cmdLinkInput" readonly>
+        <button class="btn" id="cmdCopyBtn">Sao chép</button>
+      </div>
+      <div class="cmd-hint">Chỉ huy mở link, chọn tên mình, nhập mã PIN rồi bấm <b>Giao việc</b>. Việc giao tự hiện trong sổ này, ghi rõ người giao và hạn xong; chỉ huy cũng xem được khối lượng việc anh đang làm (không thấy mục Việc cá nhân và ghi chú).</div>
+      <div class="modal-sub">Tài khoản chỉ huy</div>
+      <div id="cmdList"></div>
+      <div class="cmd-add">
+        <input type="text" id="cmdNewName" placeholder="Tên chỉ huy (vd Đ/c Hùng)" maxlength="40">
+        <input type="text" id="cmdNewTitle" placeholder="Chức vụ (không bắt buộc)" maxlength="40">
+        <input type="text" id="cmdNewPin" placeholder="Mã PIN (ít nhất 4 ký tự)" maxlength="20" autocomplete="off">
+        <button class="btn" id="cmdAddBtn">+ Thêm chỉ huy</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -2032,9 +2133,220 @@ async function loadTasks(){
   }
 
   loadFinished = true;
+  publishWorkload();
+  subscribeAssignments();
   // 3) Đồng bộ trực tiếp: thiết bị khác sửa thì máy này tự cập nhật, không cần tải lại trang.
   window.storage.subscribe(STORAGE_KEY, applyRemoteTasks);
 }
+
+// ===== Chỉ huy giao việc =====
+// Chỉ huy dùng trang riêng giaoviec.html: gửi việc vào collection 'assignments'. Sổ này tự nhận
+// việc đó vào danh sách (id cố định 'asg_<id giao>' nên nhiều máy cùng nhận cũng không bị trùng),
+// rồi báo ngược trạng thái (đã nhận / tiến độ / xong) để chỉ huy theo dõi.
+// Đồng thời đăng một bản "khối lượng việc" đã lọc (không có việc cá nhân, không có ghi chú)
+// để chỉ huy biết đang làm gì mà cân nhắc việc giao.
+const COMMANDERS_KEY = 'commanders';
+const WORKLOAD_KEY = 'public_workload';
+let commanders = [];
+let lastWorkloadJson = '';
+let assignmentsSubscribed = false;
+let asgBootSynced = false;
+let unseenAssignments = [];
+const asgSynced = {}; // id giao việc -> trạng thái đã có trên Firestore
+
+// Băm mã PIN (cyrb53 + muối theo tài khoản). Chỉ để không lưu PIN dạng chữ — KHÔNG phải bảo mật thật.
+function pinHash(id, pin){
+  const str = 'soct:' + id + ':' + pin;
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for(let i=0, ch; i<str.length; i++){
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1>>>0)).toString(36);
+}
+
+function assignedTagHtml(t){
+  if(!t.assignedBy) return '';
+  const who = escapeHtml(t.assignedBy.name) + (t.assignedBy.title ? ' (' + escapeHtml(t.assignedBy.title) + ')' : '');
+  return `<div class="assigned-tag">👤 Giao bởi <b>${who}</b>${t.assignedAt ? ' · giao ngày ' + formatDateVN(t.assignedAt) : ''}${t.urgent ? ' <span class="urgent">GẤP</span>' : ''}</div>`;
+}
+
+// Đăng bản khối lượng việc cho chỉ huy xem (chỉ khi nội dung thay đổi).
+function publishWorkload(){
+  const list = tasks.filter(t=>t.type !== 'personal' && !t.done).map(t=>({
+    id:t.id, type:t.type, cycle:t.cycle || null, text:t.text, due:t.due || null,
+    progress:t.progress || 0, recipient:t.recipient || '',
+    by: t.assignedBy ? t.assignedBy.name : ''
+  }));
+  const json = JSON.stringify(list);
+  if(json === lastWorkloadJson) return;
+  lastWorkloadJson = json;
+  window.storage.set(WORKLOAD_KEY, JSON.stringify({ updatedAt: Date.now(), tasks: list }));
+}
+
+function subscribeAssignments(){
+  if(!_fsDb || assignmentsSubscribed) return;
+  assignmentsSubscribed = true;
+  _fsDb.collection('assignments').onSnapshot(snap=>{
+    reconcileAssignments(snap.docs.map(d=>d.data()));
+  }, ()=>{});
+}
+
+function asgStateKey(status, progress, due, completedAt){
+  return JSON.stringify([status, progress || 0, due || null, completedAt || null]);
+}
+
+function reconcileAssignments(list){
+  const today = todayStr();
+  const fresh = [];
+  list.forEach(a=>{
+    if(!a || !a.id) return;
+    asgSynced[a.id] = asgStateKey(a.status, a.progress, a.dueNow !== undefined ? a.dueNow : a.due, a.completedAt);
+    const tid = 'asg_' + a.id;
+    if(tasks.some(t=>t.id === tid)) return;
+    if(a.status === 'removed' || a.status === 'cancelled') return;
+    const isDone = a.status === 'done';
+    tasks.push(migrateTask({
+      id: tid, type:'task', text:a.text, due:(a.dueNow !== undefined ? a.dueNow : a.due) || null,
+      done:isDone, progress:isDone ? 100 : (a.progress || 0),
+      createdAt:today, completedAt:isDone ? (a.completedAt || today) : null,
+      note: a.note ? 'Chỉ huy ghi chú: ' + a.note : '', recipient:'',
+      pinned: a.priority === 'urgent', urgent: a.priority === 'urgent',
+      assignmentId:a.id, assignedAt:a.createdDate || null,
+      assignedBy:{ id:a.byId, name:a.byName, title:a.byTitle || '' }
+    }));
+    if(a.status === 'sent') fresh.push(a);
+  });
+  if(fresh.length){
+    unseenAssignments.push(...fresh);
+    showAssignBanner();
+    saveTasks(); // lưu + báo "đã nhận" cho chỉ huy
+    if(!isEditingInList()) render();
+  }
+  // Lần đầu: đẩy trạng thái đã thay đổi lúc mất mạng (không gọi lại ở các lần sau để khỏi giằng co giữa các máy).
+  if(!asgBootSynced){ asgBootSynced = true; syncAssignments(); }
+}
+
+// Báo ngược trạng thái việc được giao (đã nhận / tiến độ / xong / đổi hạn) lên Firestore.
+function syncAssignments(){
+  if(!_fsDb) return;
+  tasks.forEach(t=>{
+    if(!t.assignmentId) return;
+    const status = t.done ? 'done' : 'received';
+    const completedAt = t.done ? (t.completedAt || null) : null;
+    const key = asgStateKey(status, t.progress, t.due, completedAt);
+    if(asgSynced[t.assignmentId] === key) return;
+    asgSynced[t.assignmentId] = key;
+    _fsDb.collection('assignments').doc(t.assignmentId)
+      .update({ status, progress:t.progress || 0, dueNow:t.due || null, completedAt, updatedAt:Date.now() })
+      .catch(()=>{ delete asgSynced[t.assignmentId]; });
+  });
+}
+
+// Xóa việc chỉ huy giao: đánh dấu "đã gỡ" để sổ không tự nhận lại, chỉ huy cũng thấy.
+function releaseAssignment(t){
+  if(!t || !t.assignmentId || !_fsDb) return;
+  asgSynced[t.assignmentId] = 'removed';
+  _fsDb.collection('assignments').doc(t.assignmentId)
+    .update({ status:'removed', updatedAt:Date.now() }).catch(()=>{});
+}
+
+function showAssignBanner(){
+  const el = document.getElementById('assignBanner');
+  if(!unseenAssignments.length){ el.style.display = 'none'; return; }
+  const items = unseenAssignments.slice(0,3).map(a=>
+    `<div class="ab-item"><b>${escapeHtml(a.byName)}</b> giao: ${escapeHtml(a.text)} <span>— hạn ${a.due ? formatDateVN(a.due) : 'chưa rõ'}</span>${a.priority === 'urgent' ? ' <span class="ab-urgent">GẤP</span>' : ''}</div>`
+  ).join('');
+  const more = unseenAssignments.length > 3 ? `<div class="ab-item">… và ${unseenAssignments.length - 3} việc khác</div>` : '';
+  el.innerHTML = `<div class="ab-title">📥 Có ${unseenAssignments.length} việc mới được giao</div>${items}${more}
+    <div class="ab-actions"><button class="primary" id="abView">Xem việc</button><button id="abClose">Đã biết</button></div>`;
+  el.style.display = 'block';
+  document.getElementById('abView').onclick = ()=>{ unseenAssignments = []; showAssignBanner(); currentTabGoTo('task'); };
+  document.getElementById('abClose').onclick = ()=>{ unseenAssignments = []; showAssignBanner(); };
+}
+
+// ----- Quản lý tài khoản chỉ huy -----
+async function ownerAllowed(){
+  if(personalUnlocked || !personalPwHash) return true;
+  const pw = prompt('Nhập mật khẩu (cùng mật khẩu mục Việc cá nhân) để quản lý tài khoản chỉ huy:');
+  if(pw === null) return false;
+  if(simpleHash(pw) !== personalPwHash){ alert('Sai mật khẩu.'); return false; }
+  return true;
+}
+async function loadCommanders(){
+  try{
+    const r = await window.storage.get(COMMANDERS_KEY);
+    commanders = r ? JSON.parse(r.value) : [];
+    if(!Array.isArray(commanders)) commanders = [];
+  }catch(e){ commanders = []; }
+}
+function saveCommanders(){
+  window.storage.set(COMMANDERS_KEY, JSON.stringify(commanders));
+  renderCommanders();
+}
+function renderCommanders(){
+  const box = document.getElementById('cmdList');
+  if(!commanders.length){
+    box.innerHTML = '<div class="empty" style="padding:8px 0;">Chưa có tài khoản nào — thêm chỉ huy ở bên dưới.</div>';
+    return;
+  }
+  box.innerHTML = commanders.map(c=>`
+    <div class="cmd-item" data-id="${escapeAttr(c.id)}">
+      <div class="cmd-name">${escapeHtml(c.name)}${c.title ? `<small>${escapeHtml(c.title)}</small>` : ''}</div>
+      <button class="btn ghost" data-act="pin">Đổi PIN</button>
+      <button class="btn ghost danger" data-act="del">Xóa</button>
+    </div>`).join('');
+  box.querySelectorAll('.cmd-item').forEach(row=>{
+    const c = commanders.find(x=>x.id === row.dataset.id);
+    row.querySelector('[data-act="pin"]').onclick = ()=>{
+      const pin = prompt('Mã PIN mới cho ' + c.name + ' (ít nhất 4 ký tự):');
+      if(pin === null) return;
+      if(pin.trim().length < 4){ alert('Mã PIN cần ít nhất 4 ký tự.'); return; }
+      c.pinHash = pinHash(c.id, pin.trim());
+      saveCommanders();
+    };
+    row.querySelector('[data-act="del"]').onclick = ()=>{
+      if(!confirm('Xóa tài khoản "' + c.name + '"? Việc đã giao trước đó vẫn giữ nguyên.')) return;
+      commanders = commanders.filter(x=>x.id !== c.id);
+      saveCommanders();
+    };
+  });
+}
+function addCommander(){
+  const name = document.getElementById('cmdNewName').value.trim();
+  const title = document.getElementById('cmdNewTitle').value.trim();
+  const pin = document.getElementById('cmdNewPin').value.trim();
+  if(!name){ alert('Nhập tên chỉ huy.'); return; }
+  if(pin.length < 4){ alert('Mã PIN cần ít nhất 4 ký tự.'); return; }
+  if(commanders.some(c=>c.name.toLowerCase() === name.toLowerCase())){ alert('Đã có tài khoản trùng tên này.'); return; }
+  const id = 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+  commanders.push({ id, name, title, pinHash: pinHash(id, pin) });
+  ['cmdNewName','cmdNewTitle','cmdNewPin'].forEach(i=> document.getElementById(i).value = '');
+  saveCommanders();
+}
+async function openCommanderModal(){
+  if(!(await ownerAllowed())) return;
+  await loadCommanders();
+  document.getElementById('cmdLinkInput').value = new URL('giaoviec.html', location.href).href;
+  renderCommanders();
+  document.getElementById('cmdModal').style.display = 'flex';
+}
+function closeCommanderModal(){ document.getElementById('cmdModal').style.display = 'none'; }
+document.getElementById('cmdOpenBtn').onclick = openCommanderModal;
+document.getElementById('cmdModalClose').onclick = closeCommanderModal;
+document.getElementById('cmdModal').addEventListener('click', e=>{ if(e.target.id === 'cmdModal') closeCommanderModal(); });
+document.getElementById('cmdAddBtn').onclick = addCommander;
+document.getElementById('cmdCopyBtn').onclick = async ()=>{
+  const input = document.getElementById('cmdLinkInput');
+  const btn = document.getElementById('cmdCopyBtn');
+  try{ await navigator.clipboard.writeText(input.value); }catch(e){ input.select(); document.execCommand('copy'); }
+  btn.textContent = 'Đã chép ✓';
+  setTimeout(()=> btn.textContent = 'Sao chép', 1500);
+};
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeCommanderModal(); });
 
 let pendingRemoteTasks = null;
 let pendingRemoteTimer = null;
@@ -2071,6 +2383,8 @@ async function saveTasks(){
   try{
     await window.storage.set(STORAGE_KEY, JSON.stringify(tasks), false);
     showSaveIndicator();
+    publishWorkload();
+    syncAssignments();
   }catch(e){
     console.error('Lỗi lưu dữ liệu:', e);
   }
@@ -2331,6 +2645,7 @@ function setNote(id, newNote){
 }
 
 function deleteTask(id){
+  releaseAssignment(tasks.find(x=>x.id===id)); // việc chỉ huy giao: báo lại là đã gỡ, để không tự nhận lại
   const row = document.querySelector(`tr[data-id="${id}"]`);
   if(row){
     row.classList.add('removing');
@@ -2416,6 +2731,7 @@ function makeRow(t, stt){
     <td>
       <div class="task-text">${t.pinned ? '<span class="pin-flag">📌</span>' : ''}${escapeHtml(t.text)}${recurringTag}${doneLabel}</div>
       ${recipientHtml}
+      ${assignedTagHtml(t)}
       ${quotaPanelHtml(t)}
       ${dailyCheckHtml}
       <div class="task-due-row" data-role="due-display">
@@ -3016,6 +3332,7 @@ function renderSummaryTab(){
           <div class="task-text">${t.pinned ? '<span class="pin-flag">📌</span>' : ''}${escapeHtml(t.text)}${typeTag}</div>
           ${t.quota && t.quota.target ? `<div class="summary-quota">Chỉ tiêu: ${quotaDoneCount(t)}/${t.quota.target} ${escapeHtml(t.quota.unit)} — còn thiếu ${quotaRemaining(t)}</div>` : ''}
           ${recipientHtml}
+          ${assignedTagHtml(t)}
           ${t.due ? `<div class="task-due">Hạn: ${formatDateVN(t.due)}</div>` : ''}
         </td>
         <td class="cell-days">${daysCellHtml(t)}</td>
@@ -3150,12 +3467,13 @@ async function exportMonthToExcel(monthKey, monthLabel, monthTasks, btn){
         'Hạn': t.due ? formatDateVN(t.due) : '',
         'Ngày hoàn thành': t.completedAt ? formatDateVN(t.completedAt) : '',
         'Nơi nhận / nơi triển khai': t.recipient || '',
-        'Ghi chú': t.note || ''
+        'Ghi chú': t.note || '',
+        'Người giao': t.assignedBy ? t.assignedBy.name : ''
       }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
     ws['!cols'] = [
-      { wch: 5 }, { wch: 55 }, { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 30 }
+      { wch: 5 }, { wch: 55 }, { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 30 }, { wch: 18 }
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, safeSheetName('Đã hoàn thành ' + monthLabel));
@@ -3199,7 +3517,8 @@ async function exportSummaryReportToExcel(){
         'Tình trạng': !t.due ? '' : (t.due < today ? 'Quá hạn' : (t.due === today ? 'Đến hạn hôm nay' : 'Còn hạn')),
         'Tiến độ (%)': t.progress,
         'Nơi nhận / nơi triển khai': t.recipient || '',
-        'Ghi chú': t.note || ''
+        'Ghi chú': t.note || '',
+        'Người giao': t.assignedBy ? t.assignedBy.name : ''
       }));
 
     const doneThisMonth = relevantTasks
@@ -3212,14 +3531,15 @@ async function exportSummaryReportToExcel(){
         'Hạn': t.due ? formatDateVN(t.due) : '',
         'Ngày hoàn thành': formatDateVN(t.completedAt),
         'Nơi nhận / nơi triển khai': t.recipient || '',
-        'Ghi chú': t.note || ''
+        'Ghi chú': t.note || '',
+        'Người giao': t.assignedBy ? t.assignedBy.name : ''
       }));
 
     const wsInProgress = XLSX.utils.json_to_sheet(inProgress.length ? inProgress : [{ 'Thông báo': 'Không có việc nào đang làm.' }]);
-    wsInProgress['!cols'] = [{wch:5},{wch:55},{wch:18},{wch:14},{wch:16},{wch:12},{wch:24},{wch:30}];
+    wsInProgress['!cols'] = [{wch:5},{wch:55},{wch:18},{wch:14},{wch:16},{wch:12},{wch:24},{wch:30},{wch:18}];
 
     const wsDone = XLSX.utils.json_to_sheet(doneThisMonth.length ? doneThisMonth : [{ 'Thông báo': 'Chưa có việc nào hoàn thành trong tháng này.' }]);
-    wsDone['!cols'] = [{wch:5},{wch:55},{wch:18},{wch:12},{wch:14},{wch:24},{wch:30}];
+    wsDone['!cols'] = [{wch:5},{wch:55},{wch:18},{wch:12},{wch:14},{wch:24},{wch:30},{wch:18}];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, wsInProgress, safeSheetName('Dang lam'));
