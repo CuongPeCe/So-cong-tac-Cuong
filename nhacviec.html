@@ -7,26 +7,30 @@
 <title>Sổ công tác</title>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"></noscript>
 <style>
   :root{
-    --paper:#eef1e7;
-    --ink:#1c231a;
-    --ink-soft:#565f4e;
-    --line:#c3c0a0;
-    --line-soft:#dfe0cd;
+    --paper:#fbf6ee;
+    --ink:#2b2620;
+    --ink-soft:#6b6258;
+    --line:#e2d6c3;
+    --line-soft:#f1e8d9;
     --accent:#c2410c;
     --accent-soft:#ea580c;
-    --overdue:#dc2626;
-    --overdue-bg:#fee2df;
-    --overdue-strong:#b91c1c;
-    --today:#0f7a52;
-    --today-bg:#d9f2e4;
-    --today-strong:#065f38;
-    --upcoming:#b45309;
-    --done:#8a8578;
-    --card:#fffefb;
-    --stamp:#0f7a52;
-    --header-band:#1c231a;
+    --overdue:#d6453d;
+    --overdue-bg:#fdebe8;
+    --overdue-strong:#a8261f;
+    --today:#1f8a5b;
+    --today-bg:#e3f5ec;
+    --today-strong:#126b45;
+    --upcoming:#8a5a00;
+    --done:#8a8074;
+    --card:#ffffff;
+    --stamp:#1f8a5b;
+    --header-band:#2b2620;
     --recurring:#6d28d9;
     --recurring-bg:#f1e9fc;
     --recurring-strong:#5b21b6;
@@ -459,9 +463,7 @@
   }
   tr.task-row td:first-child{border-left-width:0;}
   tr.task-row.row-overdue{background:var(--overdue-bg);}
-  tr.task-row.row-overdue td:nth-child(2){border-left:4px solid var(--overdue);}
   tr.task-row.row-today{background:var(--today-bg);}
-  tr.task-row.row-today td:nth-child(2){border-left:4px solid var(--today);}
   tr.task-row.row-done td .task-text{color:var(--done); text-decoration:line-through;}
   tr.task-row.row-done{opacity:0.7;}
   tr.task-row:hover{filter:brightness(0.98);}
@@ -1276,13 +1278,6 @@
     .title-row{flex-direction:column; align-items:flex-start; gap:4px;}
     .clock-box{text-align:left;}
 
-    /* Thống kê tổng quan: xếp dọc, mỗi nhóm 2 cột số */
-    .overview-groups{grid-template-columns:1fr; gap:8px;}
-    .overview{grid-template-columns:repeat(4,1fr); gap:4px;}
-    .ov-cell{padding:8px 4px;}
-    .ov-num{font-size:1.15rem;}
-    .ov-label{font-size:0.58rem;}
-
     /* Thanh tab: cuộn ngang, không xuống dòng */
     .tab-bar{
       overflow-x:auto;
@@ -1319,52 +1314,6 @@
     .view-switch-btn{flex:1; padding:10px 8px; font-size:0.85rem; min-height:42px;}
 
     .section-label{font-size:0.78rem; margin:18px 0 8px;}
-
-    /* Hàng việc -> dạng thẻ: hàng 1 STT + tick + nội dung; hàng 2 Còn lại + tiến độ + xóa */
-    .task-table{border-spacing:0;}
-    .task-table thead{display:none;}
-    tr.task-row{
-      display:flex; flex-wrap:wrap; align-items:flex-start;
-      padding:10px 0 8px;
-      border-bottom:1px solid var(--line-soft);
-    }
-    tr.task-row td{display:block; padding:2px 8px; border-left:none !important;}
-    tr.task-row.row-overdue, tr.task-row.row-today{border-left:4px solid transparent;}
-    tr.task-row.row-overdue{border-left-color:var(--overdue);}
-    tr.task-row.row-today{border-left-color:var(--today);}
-    td.cell-stt{
-      order:1; width:26px; flex-shrink:0;
-      padding:4px 0 0 !important;
-      display:flex; align-items:flex-start; justify-content:center;
-      font-size:0.78rem;
-    }
-    td.cell-check{
-      order:2; width:34px; flex-shrink:0;
-      padding:2px 0 0 !important;
-      display:flex !important; align-items:flex-start; justify-content:center;
-    }
-    td.cell-check input[type=checkbox]{width:22px; height:22px;}
-    tr.task-row td:nth-child(3){order:3; flex:0 0 calc(100% - 60px); width:calc(100% - 60px); min-width:0; padding:0 6px 0 4px;}
-    .task-text{font-size:0.96rem; line-height:1.4;}
-    td.cell-days{
-      order:4; flex:0 0 auto; width:auto;
-      padding:8px 8px 0 64px !important;
-      font-size:0.8rem;
-      display:flex; align-items:center; gap:6px; flex-wrap:wrap;
-    }
-    td.cell-progress{
-      order:5; flex:1 1 auto; min-width:110px;
-      padding:8px 4px 0 8px !important;
-    }
-    td.cell-del{order:6; flex:0 0 auto; width:auto; padding:4px 8px 0 !important; text-align:right;}
-    .del-btn{font-size:1.4rem; padding:2px 8px; min-width:36px; min-height:36px;}
-    .progress-slider{width:100%;}
-
-    /* Bảng tab Tổng hợp (không có cột tick): cột nội dung là cột thứ 2 */
-    .summary-table-wrap tr.task-row td:nth-child(2){order:3; flex:0 0 calc(100% - 26px); width:calc(100% - 26px); min-width:0; padding:0 6px 0 4px;}
-    .summary-table-wrap tr.task-row td:nth-child(3){order:4; flex:0 0 auto; padding:6px 8px 0 32px !important;}
-    .summary-table-wrap td.cell-days{padding-left:32px !important;}
-    .summary-type-tag{display:inline-block; margin:4px 0 0; font-size:0.6rem;}
 
     /* Các nút chỉnh sửa trong thẻ: to đủ chạm */
     .task-due-row{flex-wrap:wrap; gap:6px;}
@@ -1412,9 +1361,7 @@
 
   /* Màn rất nhỏ (< 380px) */
   @media (max-width:380px){
-    .overview{grid-template-columns:repeat(2,1fr);}
     .tab-btn{padding:10px 9px; font-size:0.76rem;}
-    td.cell-days{padding-left:8px !important;}
   }
 
   /* ===== Giao diện di động dạng app: FAB + bottom nav + bottom sheet ===== */
@@ -1426,22 +1373,6 @@
 
     /* Chừa chỗ cho bottom nav + status bar + vùng an toàn iPhone */
     .wrap{padding-bottom:calc(120px + env(safe-area-inset-bottom));}
-
-    /* Thống kê tổng quan: dải cuộn ngang, mỗi nhóm là một thẻ rộng ~86% màn */
-    .overview-groups{
-      display:flex;
-      grid-template-columns:none;
-      overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
-      scroll-snap-type:x mandatory;
-      scrollbar-width:none;
-      gap:8px;
-      margin:0 -12px 14px;
-      padding:0 12px 4px;
-    }
-    .overview-groups::-webkit-scrollbar{display:none;}
-    .overview-group{flex:0 0 86%; scroll-snap-align:start;}
-    .overview-group.total{flex:0 0 92%;}
 
     /* Ô thêm việc: mặc định ẩn, bung lên như bottom sheet khi bấm + */
     #addBoxWrap{
@@ -1550,6 +1481,162 @@
     }
     .undo-toast{bottom:calc(96px + env(safe-area-inset-bottom));}
   }
+
+  /* ===== Giao diện thân thiện (v2): thẻ lớn, chữ rõ, nút phụ cất vào dấu ba chấm ===== */
+  body{background-image:none; font-family:"Be Vietnam Pro","Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif; line-height:1.5;}
+  button,input,select,textarea{font-family:inherit;}
+  .wrap{max-width:780px; padding:24px 16px 80px;}
+  header{background:none; color:var(--ink); border:none; margin:0 0 14px; padding:2px 2px 0;}
+  header .title-row{flex-wrap:nowrap; align-items:flex-start;}
+  header h1{font-size:1.75rem; line-height:1.2; color:var(--ink);}
+  header h1::before{content:none;}
+  .hello-date{font-size:0.9rem; color:var(--ink-soft); font-weight:500;}
+  .hdr-btn{
+    margin:0; width:44px; height:44px; padding:0; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    background:#fff; border:1px solid var(--line); color:var(--ink-soft); border-radius:14px;
+  }
+  .hdr-btn:hover{background:var(--line-soft);}
+  .motivation-banner{border:none; border-radius:16px; background:#fff3e8; color:#9a3412; font-weight:500; padding:12px 16px; margin-bottom:16px;}
+  .motivation-icon{display:none;}
+
+  /* Thẻ tổng quan */
+  .overview-groups{display:block; margin-bottom:6px;}
+  .hero-card{background:#fff; border-radius:22px; padding:18px 20px; box-shadow:0 2px 10px rgba(80,55,20,.07); margin-bottom:12px;}
+  .hero-label{font-size:0.95rem; color:var(--ink-soft); font-weight:500;}
+  .hero-num{font-size:2.8rem; font-weight:700; line-height:1.05; margin-top:2px;}
+  .hero-num small{font-size:1rem; font-weight:500; color:var(--ink-soft); margin-left:6px;}
+  .chips{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  .chip{border-radius:999px; padding:7px 13px; font-size:0.85rem; font-weight:600;}
+  .chip-over{background:var(--overdue-bg); color:var(--overdue-strong);}
+  .chip-today{background:var(--today-bg); color:var(--today-strong);}
+  .chip-soon{background:#fff3d6; color:#8a5a00;}
+  .chip-pct{background:var(--line-soft); color:var(--ink-soft);}
+
+  /* Thanh tab dạng viên thuốc */
+  .tab-bar{border-bottom:none; gap:8px; margin-bottom:14px; flex-wrap:wrap;}
+  .tab-btn, .tab-btn.tab-personal{
+    border:none; border-radius:999px; background:#fff; margin:0; padding:10px 16px;
+    box-shadow:0 1px 4px rgba(80,55,20,.1); color:var(--ink-soft);
+  }
+  .tab-btn.active, .tab-btn.tab-personal.active{background:var(--accent); color:#fff;}
+  .tab-btn .tab-count, .tab-btn.tab-personal .tab-count{background:var(--line-soft); color:var(--ink-soft); font-family:inherit;}
+  .tab-btn.active .tab-count, .tab-btn.tab-personal.active .tab-count{background:rgba(255,255,255,.28); color:#fff;}
+
+  /* Ô thêm việc, nút chuyển danh sách/lịch */
+  .add-box{border:none; border-radius:18px; box-shadow:0 2px 10px rgba(80,55,20,.07); padding:12px;}
+  .add-box input[type=text], .add-box input[type=date], .add-box select, .add-box input[type=text].add-recipient{border-radius:12px; min-height:42px;}
+  .add-box input[type=text]{font-size:1rem;}
+  .add-box button{border-radius:12px; min-height:44px; box-shadow:none;}
+  .view-switch-btn{border-radius:12px; min-height:40px; padding:6px 16px;}
+  .summary-toolbar{border-radius:16px; border:none; box-shadow:0 2px 10px rgba(80,55,20,.07);}
+  .summary-export-btn{border-radius:12px; min-height:44px;}
+
+  /* Tiêu đề từng mục */
+  .section-label{text-transform:none; letter-spacing:0; font-size:1.05rem; font-weight:700; color:var(--ink); margin:22px 2px 10px;}
+  .section-label::after{border-bottom:none;}
+  .section-label .count-badge{font-family:inherit; font-size:0.78rem; padding:2px 9px;}
+  .sl-pinned{color:#8a5a00;}
+
+  /* Mỗi việc là một thẻ */
+  .task-table, .task-table tbody{display:block; background:none; border:none;}
+  .task-table{margin-bottom:0;}
+  .task-table thead{display:none;}
+  tr.task-row{
+    display:flex; flex-wrap:wrap; align-items:flex-start;
+    background:#fff; border:none; border-left:5px solid transparent; border-radius:18px;
+    padding:12px 10px 12px 6px; margin-bottom:10px;
+    box-shadow:0 2px 10px rgba(80,55,20,.07);
+  }
+  tr.task-row.row-overdue{background:#fff; border-left-color:var(--overdue);}
+  tr.task-row.row-today{background:#fff; border-left-color:var(--today);}
+  tr.task-row.row-done{opacity:0.7;}
+  tr.task-row:hover{filter:none;}
+  tr.task-row td{display:block; padding:0; border-left:0;}
+  tr.task-row td.cell-stt{display:none;}
+  td.cell-check{order:1; width:44px; height:44px; flex:none; display:flex; align-items:center; justify-content:center;}
+  td.cell-check input[type=checkbox]{
+    -webkit-appearance:none; appearance:none; margin:0; cursor:pointer;
+    width:26px; height:26px; border-radius:50%; border:2.5px solid #c9bda9; background:#fff;
+    transition:background .15s, border-color .15s;
+  }
+  td.cell-check input[type=checkbox]:checked{
+    background:var(--today) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/78% no-repeat;
+    border-color:var(--today);
+  }
+  td.cell-check input[type=checkbox]:focus-visible{outline:3px solid #f7c9b0; outline-offset:2px;}
+  td.cell-main{order:2; flex:1 1 0; min-width:0; padding:10px 4px 0 2px;}
+  .summary-table-wrap td.cell-main{padding-left:12px; padding-top:2px;}
+  .task-text{font-size:1rem; font-weight:600; line-height:1.4;}
+  td.cell-days{
+    order:3; flex:0 0 100%; padding:10px 0 0 46px; font-family:inherit; font-size:0.8rem; font-weight:600;
+    display:flex; align-items:center; flex-wrap:wrap; gap:4px 0;
+  }
+  td.cell-days > span:first-child{display:inline-block; padding:4px 11px; border-radius:999px; font-weight:600;}
+  .days-overdue{background:var(--overdue-bg); color:var(--overdue-strong);}
+  .days-today{background:var(--today-bg); color:var(--today-strong);}
+  .days-upcoming{background:#fff3d6; color:#8a5a00;}
+  .days-none, .days-done{background:var(--line-soft); color:var(--ink-soft);}
+  .days-sub{display:inline; margin:0 0 0 8px; font-size:0.76rem; font-weight:500;}
+  td.cell-progress{order:4; flex:0 0 100%; min-width:0; padding:10px 6px 0 46px;}
+  .summary-table-wrap td.cell-days, .summary-table-wrap td.cell-progress{padding-left:12px;}
+  .progress-track{height:6px; border:none; background:var(--line-soft); border-radius:99px;}
+  .progress-fill{border-radius:99px;}
+  .progress-pct{font-family:inherit; font-size:0.74rem; font-weight:600;}
+  input[type=range].progress-slider{display:none; width:100%; height:28px; margin-top:6px;}
+  tr.task-row.actions-open input[type=range].progress-slider{display:block;}
+  .recipient-tag, .task-due{font-family:inherit; font-size:0.8rem;}
+  .recipient-tag{margin-top:6px;}
+  .assigned-tag{margin-top:6px;}
+  .note-box, .quota-box, .daily-check{border-radius:12px;}
+  .recurring-tag, .summary-type-tag, .done-stamp{font-family:inherit;}
+
+  /* Nút phụ: cất sau dấu ba chấm */
+  .task-due-row{margin-top:6px; gap:8px; justify-content:space-between; flex-wrap:nowrap;}
+  .more-btn{
+    margin-left:auto; flex:none; width:44px; height:36px; border:none; border-radius:12px;
+    background:none; color:var(--ink-soft); font-size:1.3rem; letter-spacing:1px; line-height:1; cursor:pointer;
+  }
+  .more-btn:hover, tr.actions-open .more-btn{background:var(--line-soft);}
+  .row-actions{display:none; flex-wrap:wrap; gap:8px; width:100%; margin-top:2px; order:9;}
+  tr.task-row.actions-open .row-actions{display:flex;}
+  .task-due-row{flex-wrap:wrap;}
+  .row-actions button, .edit-due-btn, .edit-note-btn, .pin-btn{
+    min-height:38px; padding:0 14px; border-radius:12px; font-size:0.82rem; font-weight:600;
+    background:#fff; border:1px solid var(--line); color:var(--ink);
+  }
+  .del-btn{
+    color:var(--overdue-strong) !important; border:1px solid #f0c4c0 !important; background:#fff !important;
+    font-size:0.82rem !important; padding:0 14px !important; min-width:0 !important; transform:none !important;
+  }
+  .del-btn:hover{background:var(--overdue-bg) !important;}
+  .renew-btn, .due-save-btn, .due-cancel-btn, .daily-yes-btn, .daily-no-btn{border-radius:12px; min-height:40px; padding:0 14px;}
+  .due-edit-form input[type=date], .due-edit-form input[type=text], .due-edit-form textarea{border-radius:10px;}
+
+  /* Lịch, lịch sử, cửa sổ, thông báo */
+  .calendar-wrap, .history-list, .month-chip, .modal-box{border-radius:16px;}
+  .calendar-wrap, .history-list{border:none; box-shadow:0 2px 10px rgba(80,55,20,.07);}
+  .cal-cell{border-radius:10px;}
+  .assign-banner{border-radius:16px; border-width:0 0 0 6px;}
+  .assign-banner button{border-radius:12px; min-height:40px; padding:0 14px;}
+  .undo-toast{border-radius:14px;}
+  .status-bar{border-top:1px solid var(--line);}
+  .lock-screen{border-radius:18px;}
+
+  @media (max-width:600px){
+    .wrap{padding:16px 14px calc(130px + env(safe-area-inset-bottom));}
+    header h1{font-size:1.5rem;}
+    header .title-row{flex-direction:row; align-items:flex-start; gap:8px;}
+    .bn-btn{margin:6px 3px 4px; border-radius:16px;}
+    .bn-btn.active{background:#ffede3; color:var(--accent);}
+    .bn-btn.active::before{display:none;}
+    .bn-btn.bn-personal.active{background:#fff3d6;}
+    .bn-label{font-size:0.68rem;}
+    .fab{width:58px; height:58px; border-radius:20px; box-shadow:0 8px 20px rgba(194,65,12,.4);}
+    #addBoxWrap{border-radius:22px 22px 0 0 !important;}
+    .hero-num{font-size:2.5rem;}
+    td.cell-progress{padding-right:2px;}
+  }
 </style>
 </head>
 <body>
@@ -1557,14 +1644,12 @@
   <header>
     <div class="title-row">
       <div>
-        <h1>Sổ công tác</h1>
-        <div class="subtitle">Danh sách việc cần làm — tự động nhắc theo hạn</div>
-        <button class="hdr-btn" id="cmdOpenBtn">👥 Chỉ huy giao việc</button>
+        <div class="hello-date"><span id="clockDate">--/--/----</span> · <span id="clockTime">--:--</span></div>
+        <h1>Chào anh Cường</h1>
       </div>
-      <div class="clock-box">
-        <div class="clock-time" id="clockTime">--:--:--</div>
-        <div class="clock-date" id="clockDate">--/--/----</div>
-      </div>
+      <button class="hdr-btn" id="cmdOpenBtn" aria-label="Chỉ huy giao việc" title="Chỉ huy giao việc">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M17 5.5a3 3 0 0 1 0 5.6M18.5 14.3c1.6.7 2.8 2.2 3 4.2"/></svg>
+      </button>
     </div>
   </header>
 
@@ -1578,10 +1663,10 @@
   <div class="overview-groups" id="overviewGroups"></div>
 
   <div class="tab-bar" id="tabBar">
-    <button class="tab-btn" data-tab="summary">📋 Tổng hợp <span class="tab-count" id="tabCountSummary">0</span></button>
-    <button class="tab-btn active" data-tab="task">Nhiệm vụ có thời hạn cụ thể <span class="tab-count" id="tabCountTask">0</span></button>
-    <button class="tab-btn" data-tab="recurring">Nhiệm vụ thường xuyên <span class="tab-count" id="tabCountRecurring">0</span></button>
-    <button class="tab-btn tab-personal" data-tab="personal">🔒 Việc cá nhân <span class="tab-count" id="tabCountPersonal">0</span></button>
+    <button class="tab-btn" data-tab="summary">Tổng hợp <span class="tab-count" id="tabCountSummary">0</span></button>
+    <button class="tab-btn active" data-tab="task">Có thời hạn <span class="tab-count" id="tabCountTask">0</span></button>
+    <button class="tab-btn" data-tab="recurring">Thường xuyên <span class="tab-count" id="tabCountRecurring">0</span></button>
+    <button class="tab-btn tab-personal" data-tab="personal">Việc cá nhân <span class="tab-count" id="tabCountPersonal">0</span></button>
   </div>
 
   <div class="lock-screen" id="lockScreen" style="display:none;">
@@ -2132,10 +2217,10 @@ async function loadTasks(){
   }
 
   loadFinished = true;
-  publishWorkload();
-  subscribeAssignments();
   // 3) Đồng bộ trực tiếp: thiết bị khác sửa thì máy này tự cập nhật, không cần tải lại trang.
   window.storage.subscribe(STORAGE_KEY, applyRemoteTasks);
+  publishWorkload();
+  try{ subscribeAssignments(); }catch(e){ console.error('Không theo dõi được việc chỉ huy giao:', e); }
 }
 
 // ===== Chỉ huy giao việc =====
@@ -2696,7 +2781,7 @@ function makeRow(t, stt){
   tr.innerHTML = `
     <td class="cell-stt">${stt != null ? stt : ''}</td>
     <td class="cell-check">${isDailyCheck ? '' : `<input type="checkbox" ${t.done?'checked':''}>`}</td>
-    <td>
+    <td class="cell-main">
       <div class="task-text">${t.pinned ? '<span class="pin-flag">📌</span>' : ''}${escapeHtml(t.text)}${recurringTag}${doneLabel}</div>
       ${recipientHtml}
       ${assignedTagHtml(t)}
@@ -2704,9 +2789,13 @@ function makeRow(t, stt){
       ${dailyCheckHtml}
       <div class="task-due-row" data-role="due-display">
         ${t.due ? `<span class="task-due">Hạn: ${formatDateVN(t.due)}</span>` : `<span class="task-due">Chưa có hạn</span>`}
-        <button class="edit-due-btn" data-role="edit-due-btn">Sửa tên/hạn/nơi nhận</button>
+        <button class="more-btn" data-role="more-btn" aria-label="Thêm tùy chọn" aria-expanded="false">···</button>
+        <div class="row-actions">
+        <button class="edit-due-btn" data-role="edit-due-btn">Sửa nội dung / hạn</button>
         <button class="edit-note-btn" data-role="edit-note-btn">${t.note ? 'Sửa ghi chú' : '+ Ghi chú'}</button>
         <button class="pin-btn${t.pinned ? ' pinned' : ''}" data-role="pin-btn" title="${t.pinned ? 'Bỏ ghim' : 'Ghim lên đầu'}">${t.pinned ? '📌 Bỏ ghim' : '📌 Ghim'}</button>
+        <button class="del-btn" title="Xóa việc này">Xóa việc</button>
+        </div>
       </div>
       <div class="due-edit-form" data-role="due-edit-form" style="display:none; flex-direction:column; align-items:stretch;">
         <textarea data-role="text-edit-input" placeholder="Nội dung việc..." style="min-height:44px; border-color:var(--accent);">${escapeHtml(t.text)}</textarea>
@@ -2737,7 +2826,6 @@ function makeRow(t, stt){
       </div>
       <input type="range" class="progress-slider" min="0" max="100" step="5" value="${t.progress}"${t.quota && t.quota.target ? ' style="display:none;"' : ''}>
     </td>
-    <td class="cell-del"><button class="del-btn" title="Xóa việc này">&times;</button></td>
   `;
 
   const checkboxEl = tr.querySelector('.cell-check input');
@@ -2756,7 +2844,12 @@ function makeRow(t, stt){
     tr.querySelector('.progress-pct').textContent = pct + '%';
   });
   tr.querySelector('.progress-slider').addEventListener('change', (e)=> setProgress(t.id, e.target.value));
-  tr.querySelector('.del-btn').onclick = () => deleteTask(t.id);
+  tr.querySelector('.del-btn').onclick = () => { if(confirm('Xóa việc này?')) deleteTask(t.id); };
+  const moreBtn = tr.querySelector('[data-role="more-btn"]');
+  moreBtn.onclick = () => {
+    const open = tr.classList.toggle('actions-open');
+    moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
   tr.querySelector('[data-role="pin-btn"]').onclick = () => togglePin(t.id);
 
   const quotaPlus = tr.querySelector('[data-role="quota-plus"]');
@@ -3243,16 +3336,6 @@ function hideCalDayDetail(){
   document.getElementById('calDayDetail').style.display = 'none';
 }
 
-function computeGroupStats(type){
-  const list = tasks.filter(t=>t.type===type);
-  const today = todayStr();
-  const active = list.filter(t=>!t.done);
-  const overdue = active.filter(t=>t.due && t.due < today);
-  const dueToday = active.filter(t=>t.due === today);
-  const pct = list.length ? Math.round(list.reduce((s,t)=>s+t.progress,0)/list.length) : 0;
-  return { activeCount: active.length, overdueCount: overdue.length, todayCount: dueToday.length, pct };
-}
-
 // Tab "Tổng hợp": liệt kê tất cả việc đang làm từ 2 tab task + recurring (không personal),
 // chỉ để xem — sửa/xóa/tick vẫn phải làm ở đúng tab gốc để không phá logic riêng của từng loại.
 function renderSummaryTab(){
@@ -3296,7 +3379,7 @@ function renderSummaryTab(){
       const recipientHtml = t.recipient ? `<div class="recipient-tag">${escapeHtml(t.recipient)}</div>` : '';
       html += `<tr class="task-row${t.due && t.due < today ? ' row-overdue' : (t.due===today ? ' row-today' : '')}">
         <td class="cell-stt">${sttCounter}</td>
-        <td>
+        <td class="cell-main">
           <div class="task-text">${t.pinned ? '<span class="pin-flag">📌</span>' : ''}${escapeHtml(t.text)}${typeTag}</div>
           ${t.quota && t.quota.target ? `<div class="summary-quota">Chỉ tiêu: ${quotaDoneCount(t)}/${t.quota.target} ${escapeHtml(t.quota.unit)} — còn thiếu ${quotaRemaining(t)}</div>` : ''}
           ${recipientHtml}
@@ -3319,45 +3402,28 @@ function renderSummaryTab(){
 }
 
 function renderOverviewGroups(){
-  const taskStats = computeGroupStats('task');
-  const recStats = computeGroupStats('recurring');
-  // Không tính việc cá nhân vào "Tổng cộng" để không lộ số lượng khi mục đang khóa.
-  const allTasks = tasks.filter(t=>t.type !== 'personal');
-  const totalActive = allTasks.filter(t=>!t.done).length;
-  const totalOverdue = allTasks.filter(t=>!t.done && t.due && t.due < todayStr()).length;
-  const totalToday = allTasks.filter(t=>!t.done && t.due === todayStr()).length;
-  const totalPct = allTasks.length ? Math.round(allTasks.reduce((s,t)=>s+t.progress,0)/allTasks.length) : 0;
+  // Không tính việc cá nhân để không lộ số lượng khi mục đang khóa.
+  const today = todayStr();
+  const active = tasks.filter(t=>t.type !== 'personal' && !t.done);
+  const overdue = active.filter(t=>t.due && t.due < today).length;
+  const dueToday = active.filter(t=>t.due === today).length;
+  const soon = active.filter(t=>t.due && t.due > today).length;
+  const all = tasks.filter(t=>t.type !== 'personal');
+  const pct = all.length ? Math.round(all.reduce((s,t)=>s+t.progress,0)/all.length) : 0;
 
-  const container = document.getElementById('overviewGroups');
-  container.innerHTML = `
-    <div class="overview-group total">
-      <div class="og-title">Tổng cộng — tất cả nhiệm vụ</div>
-      <div class="overview">
-        <div class="ov-cell"><div class="ov-num">${totalActive}</div><div class="ov-label">Đang làm</div></div>
-        <div class="ov-cell overdue"><div class="ov-num">${totalOverdue}</div><div class="ov-label">Quá hạn</div></div>
-        <div class="ov-cell today"><div class="ov-num">${totalToday}</div><div class="ov-label">Hôm nay</div></div>
-        <div class="ov-cell progress"><div class="ov-num">${totalPct}%</div><div class="ov-label">Tiến độ chung</div></div>
-      </div>
-    </div>
-    <div class="overview-group">
-      <div class="og-title gt-task">Nhiệm vụ có thời hạn cụ thể</div>
-      <div class="overview">
-        <div class="ov-cell"><div class="ov-num">${taskStats.activeCount}</div><div class="ov-label">Đang làm</div></div>
-        <div class="ov-cell overdue"><div class="ov-num">${taskStats.overdueCount}</div><div class="ov-label">Quá hạn</div></div>
-        <div class="ov-cell today"><div class="ov-num">${taskStats.todayCount}</div><div class="ov-label">Hôm nay</div></div>
-        <div class="ov-cell progress"><div class="ov-num">${taskStats.pct}%</div><div class="ov-label">Tiến độ</div></div>
-      </div>
-    </div>
-    <div class="overview-group">
-      <div class="og-title gt-recurring">Nhiệm vụ thường xuyên</div>
-      <div class="overview">
-        <div class="ov-cell"><div class="ov-num">${recStats.activeCount}</div><div class="ov-label">Đang làm</div></div>
-        <div class="ov-cell overdue"><div class="ov-num">${recStats.overdueCount}</div><div class="ov-label">Quá hạn</div></div>
-        <div class="ov-cell today"><div class="ov-num">${recStats.todayCount}</div><div class="ov-label">Hôm nay</div></div>
-        <div class="ov-cell progress"><div class="ov-num">${recStats.pct}%</div><div class="ov-label">Tiến độ</div></div>
-      </div>
-    </div>
-  `;
+  const chips = [];
+  if(overdue) chips.push(`<span class="chip chip-over">${overdue} quá hạn</span>`);
+  if(dueToday) chips.push(`<span class="chip chip-today">${dueToday} đến hạn hôm nay</span>`);
+  if(soon) chips.push(`<span class="chip chip-soon">${soon} sắp tới</span>`);
+  if(!chips.length) chips.push(`<span class="chip chip-today">${active.length ? 'Chưa có việc nào gấp' : 'Đã xong hết, nghỉ thôi'}</span>`);
+  chips.push(`<span class="chip chip-pct">Tiến độ chung ${pct}%</span>`);
+
+  document.getElementById('overviewGroups').innerHTML = `
+    <div class="hero-card">
+      <div class="hero-label">Việc đang chờ anh</div>
+      <div class="hero-num">${active.length}<small>việc</small></div>
+      <div class="chips">${chips.join('')}</div>
+    </div>`;
 }
 
 const MONTH_NAMES_VN = ['Th 1','Th 2','Th 3','Th 4','Th 5','Th 6','Th 7','Th 8','Th 9','Th 10','Th 11','Th 12'];
@@ -3590,7 +3656,7 @@ function tickClock(){
   const hh = String(d.getHours()).padStart(2,'0');
   const mi = String(d.getMinutes()).padStart(2,'0');
   const ss = String(d.getSeconds()).padStart(2,'0');
-  clockTimeEl.textContent = `${hh}:${mi}:${ss}`;
+  clockTimeEl.textContent = `${hh}:${mi}`;
   const today = todayStr();
   if(today === clockDay) return;
   // Sang ngày mới (để sổ mở qua đêm): cập nhật ngày, câu động viên, trạng thái quá hạn/hôm nay

@@ -4,173 +4,178 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#1c231a">
+<meta name="theme-color" content="#fbf6ee">
 <title>Giao việc — Sổ công tác</title>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"></noscript>
 <style>
   :root{
-    --paper:#eef1e7; --ink:#1c231a; --ink-soft:#565f4e; --line:#c3c0a0; --line-soft:#dfe0cd;
+    --paper:#fbf6ee; --ink:#2b2620; --ink-soft:#6b6258; --line:#e2d6c3; --line-soft:#f1e8d9;
     --accent:#c2410c; --accent-soft:#ea580c;
-    --overdue:#dc2626; --overdue-bg:#fee2df; --overdue-strong:#b91c1c;
-    --today:#0f7a52; --today-bg:#d9f2e4; --today-strong:#065f38;
-    --upcoming:#b45309; --done:#8a8578; --card:#fffefb; --header-band:#1c231a;
+    --overdue:#d6453d; --overdue-bg:#fdebe8; --overdue-strong:#a8261f;
+    --today:#1f8a5b; --today-bg:#e3f5ec; --today-strong:#126b45;
+    --amber:#8a5a00; --amber-bg:#fff3d6;
     --blue:#2f6fb5; --blue-strong:#1f4e85; --blue-bg:#eaf2fd;
-    --amber-bg:#fdf3dc; --amber:#8a5a00;
   }
   *{box-sizing:border-box;}
   body{
-    margin:0; background:var(--paper); color:var(--ink);
-    background-image:radial-gradient(circle at 1px 1px, rgba(34,40,31,0.035) 1px, transparent 0);
-    background-size:22px 22px;
-    font-family:"Inter","Segoe UI","Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    margin:0; background:var(--paper); color:var(--ink); line-height:1.5;
+    font-family:"Be Vietnam Pro","Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;
   }
-  .wrap{max-width:760px; margin:0 auto; padding:0 16px 60px;}
-  header{
-    background:var(--header-band); color:#fdfaf3; border-bottom:3px solid var(--accent);
-    padding:16px 18px; margin:0 -16px 20px;
-  }
-  header .inner{max-width:760px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
-  h1{font-size:1.4rem; margin:0; font-weight:700;}
-  h1::before{content:"● "; color:var(--accent-soft);}
-  .subtitle{color:#c9c2a4; font-size:0.84rem; margin-top:3px;}
+  button,input,select,textarea{font-family:inherit;}
+  .wrap{max-width:640px; margin:0 auto; padding:24px 16px 60px;}
+  .hello{font-size:0.9rem; color:var(--ink-soft); font-weight:500;}
+  h1{font-size:1.7rem; line-height:1.2; margin:2px 0 16px; font-weight:700;}
 
-  .card{background:var(--card); border:1px solid var(--line); padding:14px 16px; margin-bottom:18px;}
-  .card h2{
-    margin:0 0 12px; font-size:0.78rem; text-transform:uppercase; letter-spacing:1px; color:var(--ink-soft);
-    display:flex; align-items:center; gap:8px;
+  .card{background:#fff; border-radius:20px; padding:18px; margin-bottom:14px; box-shadow:0 2px 10px rgba(80,55,20,.07);}
+  .card h2{margin:0 0 4px; font-size:1.05rem; font-weight:700;}
+  .section-title{font-size:1.05rem; font-weight:700; margin:22px 2px 10px;}
+  label{display:block; font-size:0.9rem; font-weight:600; margin:16px 0 6px;}
+  label:first-child{margin-top:0;}
+  input[type=text], input[type=date], textarea{
+    width:100%; border:1.5px solid var(--line); background:#fffdf9; color:var(--ink);
+    font-size:1rem; padding:0 14px; min-height:48px; border-radius:14px;
   }
-  .card h2::after{content:""; flex:1; border-bottom:2px solid var(--line);}
-  label{display:block; font-size:0.8rem; font-weight:600; color:var(--ink-soft); margin:12px 0 4px;}
-  input[type=text], input[type=password], input[type=date], select, textarea{
-    width:100%; border:1.5px solid var(--line); background:#fff; color:var(--ink);
-    font-family:inherit; font-size:1rem; padding:10px 12px; border-radius:4px;
-  }
-  textarea{min-height:84px; resize:vertical;}
-  input:focus, select:focus, textarea:focus{outline:2px solid var(--blue); outline-offset:-1px; border-color:var(--blue);}
-  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  textarea{padding:12px 14px; min-height:92px; resize:vertical;}
+  input:focus, textarea:focus, button:focus-visible, summary:focus-visible{outline:3px solid #f7c9b0; outline-offset:1px; border-color:var(--accent);}
   .btn-primary{
-    width:100%; margin-top:16px; min-height:48px;
-    background:linear-gradient(135deg, var(--accent-soft), var(--accent)); color:#fff; border:none; border-radius:4px;
-    font-family:inherit; font-size:1rem; font-weight:700; cursor:pointer;
-    box-shadow:0 2px 6px rgba(194,65,12,0.3);
+    width:100%; margin-top:14px; min-height:54px; border:none; border-radius:16px; cursor:pointer;
+    background:var(--accent); color:#fff; font-size:1.05rem; font-weight:700;
+    box-shadow:0 6px 16px rgba(194,65,12,.3);
   }
   .btn-primary:disabled{opacity:0.6; cursor:default;}
-  .msg{margin-top:10px; font-size:0.86rem; font-weight:600; min-height:1.2em;}
+  .msg{margin-top:10px; font-size:0.9rem; font-weight:600; min-height:1.2em;}
   .msg.err{color:var(--overdue-strong);} .msg.ok{color:var(--today-strong);} .msg.warn{color:var(--amber);}
-  .hint{font-size:0.78rem; color:var(--ink-soft); margin-top:6px; line-height:1.45;}
+  .hint{font-size:0.8rem; color:var(--ink-soft); margin-top:6px; line-height:1.5;}
 
-  /* Khối lượng việc */
-  .load-badge{
-    display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:1rem;
-    padding:8px 14px; border-radius:6px; border:1.5px solid;
+  /* Hạn xong */
+  .quick{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;}
+  .quick button{
+    min-height:44px; padding:0 15px; border-radius:999px; cursor:pointer;
+    border:1.5px solid var(--line); background:#fffdf9; color:var(--ink); font-weight:600; font-size:0.9rem;
   }
-  .load-light{background:var(--today-bg); color:var(--today-strong); border-color:var(--today);}
-  .load-mid{background:var(--amber-bg); color:var(--amber); border-color:#e0a83c;}
-  .load-heavy{background:var(--overdue-bg); color:var(--overdue-strong); border-color:var(--overdue);}
-  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:12px 0;}
-  .stat{background:var(--paper); border:1px solid var(--line-soft); border-left:4px solid var(--ink-soft); padding:8px 10px;}
-  .stat b{display:block; font-size:1.4rem; line-height:1.1; font-variant-numeric:tabular-nums;}
-  .stat span{font-size:0.66rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--ink-soft);}
-  .stat.s-over{border-left-color:var(--overdue); background:var(--overdue-bg);}
-  .stat.s-today{border-left-color:var(--today); background:var(--today-bg);}
-  .stat.s-week{border-left-color:var(--upcoming);}
-  .updated{font-size:0.74rem; color:var(--ink-soft);}
+  .quick button.on{border-color:var(--accent); background:#ffede3; color:var(--accent); font-weight:700;}
+  .due-info{font-size:0.85rem; color:var(--ink-soft); margin-top:8px;}
+  .due-info b{color:var(--ink);}
+  .switch-row{display:flex; align-items:center; justify-content:space-between; min-height:48px; margin-top:12px; cursor:pointer;}
+  .switch-row span{font-size:0.9rem; font-weight:600;}
+  .switch-row input{position:absolute; opacity:0; width:1px; height:1px;}
+  .switch{width:52px; height:30px; border-radius:99px; background:#d8cebd; padding:3px; display:flex; transition:background .15s;}
+  .switch::after{content:""; width:24px; height:24px; border-radius:50%; background:#fff; transition:transform .15s;}
+  .switch-row input:checked + .switch{background:var(--accent);}
+  .switch-row input:checked + .switch::after{transform:translateX(22px);}
+  .switch-row input:focus-visible + .switch{outline:3px solid #f7c9b0;}
 
-  .days-title{font-size:0.8rem; font-weight:600; color:var(--ink-soft); margin:14px 0 6px;}
-  .days{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+  /* Anh Cường đang bận thế nào */
+  .load-badge{display:flex; align-items:center; gap:10px; font-size:1.1rem; font-weight:700;}
+  .dot{width:12px; height:12px; border-radius:50%; flex:none;}
+  .load-light .dot{background:var(--today);} .load-mid .dot{background:#e0a83c;} .load-heavy .dot{background:var(--overdue);}
+  .load-msg{font-size:0.9rem; color:var(--ink-soft); margin-top:4px;}
+  .meter{display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:12px;}
+  .meter i{height:8px; border-radius:99px; background:var(--line-soft);}
+  .load-light .meter i:nth-child(-n+1){background:var(--today);}
+  .load-mid .meter i:nth-child(-n+2){background:#e0a83c;}
+  .load-heavy .meter i{background:var(--overdue);}
+  .meter-labels{display:grid; grid-template-columns:repeat(3,1fr); font-size:0.74rem; color:var(--ink-soft); margin-top:4px;}
+  .meter-labels span:nth-child(2){text-align:center;} .meter-labels span:nth-child(3){text-align:right;}
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .chip{border-radius:999px; padding:6px 12px; font-size:0.82rem; font-weight:600; background:var(--line-soft); color:var(--ink-soft);}
+  .chip.over{background:var(--overdue-bg); color:var(--overdue-strong);}
+  .chip.today{background:var(--today-bg); color:var(--today-strong);}
+  .chip.week{background:var(--amber-bg); color:var(--amber);}
+  .updated{font-size:0.75rem; color:var(--ink-soft); margin-top:12px;}
+
+  details{margin-top:14px;}
+  summary{cursor:pointer; font-size:0.9rem; font-weight:700; color:var(--accent); min-height:44px; display:flex; align-items:center;}
+  .days{display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin-top:4px;}
   .day{
-    border:1px solid var(--line-soft); background:var(--paper); padding:5px 2px; text-align:center;
-    cursor:pointer; font-family:inherit; color:var(--ink);
+    border:1px solid var(--line-soft); background:var(--paper); border-radius:12px; padding:6px 2px; text-align:center;
+    cursor:pointer; color:var(--ink); min-height:52px;
   }
-  .day small{display:block; font-size:0.62rem; color:var(--ink-soft); text-transform:uppercase;}
-  .day .dn{display:block; font-size:0.8rem; font-weight:700;}
-  .day .dc{display:block; font-size:0.74rem; font-weight:700; margin-top:2px; min-height:1.1em;}
+  .day small{display:block; font-size:0.62rem; color:var(--ink-soft);}
+  .day .dn{display:block; font-size:0.78rem; font-weight:700;}
+  .day .dc{display:block; font-size:0.74rem; font-weight:700; min-height:1.1em;}
   .day.c1{background:#fdf3dc;} .day.c2{background:#fbe0b4;} .day.c3{background:#f8c7a0;}
   .day.sel{outline:2px solid var(--accent); outline-offset:-2px;}
 
   .task-card{
-    border:1px solid var(--line-soft); border-left:4px solid var(--ink-soft);
-    background:var(--paper); padding:9px 11px; margin-top:8px;
+    background:#fff; border-radius:16px; border-left:5px solid var(--line); padding:12px 14px; margin-top:8px;
+    box-shadow:0 2px 10px rgba(80,55,20,.07);
   }
-  .task-card.over{border-left-color:var(--overdue); background:var(--overdue-bg);}
-  .task-card.today{border-left-color:var(--today); background:var(--today-bg);}
+  .card .task-card{box-shadow:none; background:var(--paper);}
+  .task-card.over{border-left-color:var(--overdue);} .task-card.today{border-left-color:var(--today);}
   .task-card .tt{font-weight:600; line-height:1.4; word-break:break-word;}
-  .task-card .meta{display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:5px; font-size:0.78rem; color:var(--ink-soft);}
+  .task-card .meta{display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin-top:6px; font-size:0.8rem; color:var(--ink-soft);}
   .due-over{color:var(--overdue-strong); font-weight:700;} .due-today{color:var(--today-strong); font-weight:700;}
-  .bar{height:6px; background:var(--line-soft); border:1px solid var(--line); margin-top:6px; position:relative;}
-  .bar i{display:block; height:100%; background:linear-gradient(90deg,#fb923c,var(--accent));}
-  .tag-by{display:inline-block; font-size:0.7rem; font-weight:700; color:var(--blue-strong); background:var(--blue-bg); border:1px solid #c9dcf5; border-radius:8px; padding:0 7px;}
-  details summary{cursor:pointer; font-size:0.84rem; font-weight:700; color:var(--ink-soft); margin-top:14px;}
+  .bar{height:6px; background:var(--line-soft); border-radius:99px; margin-top:10px; overflow:hidden;}
+  .bar i{display:block; height:100%; background:var(--accent); border-radius:99px;}
+  .tag-by{font-size:0.74rem; font-weight:600; color:var(--blue-strong); background:var(--blue-bg); border-radius:999px; padding:2px 9px;}
+  .urgent-tag{font-size:0.72rem; font-weight:700; color:#fff; background:var(--accent); border-radius:999px; padding:2px 9px;}
 
-  .st{display:inline-block; font-size:0.74rem; font-weight:700; border-radius:10px; padding:1px 9px; border:1px solid;}
-  .st-sent{background:var(--amber-bg); color:var(--amber); border-color:#e0a83c;}
-  .st-received{background:var(--blue-bg); color:var(--blue-strong); border-color:#c9dcf5;}
-  .st-done{background:var(--today-bg); color:var(--today-strong); border-color:var(--today);}
-  .st-gone{background:var(--line-soft); color:var(--ink-soft); border-color:var(--line);}
-  .recall{margin-left:auto; background:none; border:1px solid var(--line); border-radius:4px; font-family:inherit; font-size:0.74rem; font-weight:600; color:var(--ink-soft); padding:3px 9px; cursor:pointer;}
+  .st{display:inline-block; font-size:0.78rem; font-weight:600; border-radius:999px; padding:3px 11px;}
+  .st-sent{background:var(--amber-bg); color:var(--amber);}
+  .st-received{background:var(--blue-bg); color:var(--blue-strong);}
+  .st-done{background:var(--today-bg); color:var(--today-strong);}
+  .st-gone{background:var(--line-soft); color:var(--ink-soft);}
+  .recall{margin-left:auto; min-height:40px; background:#fff; border:1px solid var(--line); border-radius:12px; font-size:0.8rem; font-weight:600; color:var(--ink-soft); padding:0 14px; cursor:pointer;}
   .recall:hover{border-color:var(--overdue); color:var(--overdue-strong);}
-  .empty{color:var(--ink-soft); font-size:0.9rem; font-style:italic; padding:6px 0;}
+  .empty{color:var(--ink-soft); font-size:0.92rem; padding:6px 0;}
   .center-note{text-align:center; padding:30px 10px; color:var(--ink-soft);}
   [hidden]{display:none !important;}
-
-  @media (max-width:520px){
-    .stats{grid-template-columns:repeat(2,1fr);}
-    .row2{grid-template-columns:1fr;}
-  }
+  @media (max-width:420px){ .days{gap:3px;} .day .dn{font-size:0.7rem;} }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="inner">
-      <div>
-        <h1>Giao việc</h1>
-        <div class="subtitle">Sổ công tác — giao việc, xem khối lượng việc đang làm</div>
-      </div>
-    </div>
-  </header>
+  <div class="hello">Sổ công tác</div>
+  <h1>Giao việc cho anh Cường</h1>
 
   <div class="center-note" id="loading">Đang tải…</div>
 
-  <!-- Màn chính -->
   <div id="mainArea" hidden>
-    <section class="card">
-      <h2>Giao việc mới</h2>
-      <label for="asgName">Người giao (chọn hoặc gõ tên của bạn)</label>
-      <input type="text" id="asgName" list="nameList" placeholder="Ví dụ: Đ/c Hùng" maxlength="40" autocomplete="off">
-      <datalist id="nameList"></datalist>
-      <label for="asgText">Nội dung việc cần làm</label>
-      <textarea id="asgText" placeholder="Ví dụ: Báo cáo kết quả rà soát CSKV trên địa bàn…" maxlength="1000"></textarea>
-      <div class="row2">
-        <div>
-          <label for="asgDue">Hạn phải xong</label>
-          <input type="date" id="asgDue">
-        </div>
-        <div>
-          <label for="asgPriority">Mức độ</label>
-          <select id="asgPriority">
-            <option value="normal">Bình thường</option>
-            <option value="urgent">Gấp</option>
-          </select>
-        </div>
-      </div>
-      <label for="asgNote">Ghi chú thêm (không bắt buộc)</label>
-      <input type="text" id="asgNote" placeholder="Yêu cầu cụ thể, đầu mối liên hệ…" maxlength="300">
-      <button class="btn-primary" id="asgBtn">Giao việc</button>
-      <div class="msg" id="asgMsg"></div>
-      <div class="hint">Việc giao sẽ hiện trên sổ của người nhận kèm tên bạn và hạn xong. Chọn ngày ở bảng khối lượng bên dưới để chọn nhanh hạn ít việc.</div>
-    </section>
-
-    <section class="card">
-      <h2>Đang làm những việc gì</h2>
+    <section class="card" aria-live="polite">
       <div id="loadSummary"></div>
     </section>
 
     <section class="card">
-      <h2>Việc tôi đã giao</h2>
-      <div id="myList"></div>
+      <h2>Giao việc mới</h2>
+      <label for="asgName">Bạn là ai?</label>
+      <input type="text" id="asgName" list="nameList" placeholder="Chọn hoặc gõ tên, ví dụ: Đ/c Hùng" maxlength="40" autocomplete="off">
+      <datalist id="nameList"></datalist>
+
+      <label for="asgText">Việc cần giao</label>
+      <textarea id="asgText" placeholder="Ví dụ: Báo cáo kết quả rà soát CSKV trên địa bàn…" maxlength="1000"></textarea>
+
+      <label for="asgDue">Phải xong trước</label>
+      <div class="quick" id="quickDue">
+        <button type="button" data-days="1">Ngày mai</button>
+        <button type="button" data-days="3">3 ngày nữa</button>
+        <button type="button" data-days="7">1 tuần nữa</button>
+      </div>
+      <input type="date" id="asgDue">
+      <div class="due-info" id="dueInfo"></div>
+      <details>
+        <summary>Xem số việc mỗi ngày trong 14 ngày tới</summary>
+        <div class="days" id="dayStrip"></div>
+        <div class="hint">Ô đậm là ngày đã nhiều việc đến hạn. Bấm vào một ngày để chọn làm hạn xong.</div>
+      </details>
+
+      <label class="switch-row" for="asgUrgent"><span>Việc gấp</span><input type="checkbox" id="asgUrgent"><span class="switch" aria-hidden="true"></span></label>
+
+      <label for="asgNote">Ghi chú thêm (không bắt buộc)</label>
+      <input type="text" id="asgNote" placeholder="Yêu cầu cụ thể, đầu mối liên hệ…" maxlength="300">
+
+      <button class="btn-primary" id="asgBtn">Giao việc</button>
+      <div class="msg" id="asgMsg"></div>
+      <div class="hint">Việc giao sẽ hiện ngay trên sổ của anh Cường, kèm tên bạn và hạn xong.</div>
     </section>
+
+    <div class="section-title">Việc bạn đã giao</div>
+    <div id="myList"></div>
   </div>
 </div>
 
@@ -236,7 +241,7 @@ function subscribeMine(){
   const name = currentName();
   if(!name){
     myAssignments = [];
-    $('myList').innerHTML = '<div class="empty">Nhập tên của bạn ở trên để xem các việc bạn đã giao.</div>';
+    $('myList').innerHTML = '<div class="card"><div class="empty">Nhập tên của bạn ở trên để xem các việc bạn đã giao.</div></div>';
     return;
   }
   me = { id:nameKey(name), name, title:currentTitle() };
@@ -257,9 +262,10 @@ function onNameChanged(){
 // ---------- Khối lượng việc ----------
 function loadLevel(tasksOnly, overdue){
   const n = tasksOnly.length;
-  if(n >= LOAD_HEAVY_AT || overdue >= 3) return { cls:'load-heavy', icon:'🔴', text:'Nặng — nên hạn chế giao thêm' };
-  if(n >= LOAD_MEDIUM_AT || overdue >= 1) return { cls:'load-mid', icon:'🟡', text:'Vừa — cân nhắc hạn xong' };
-  return { cls:'load-light', icon:'🟢', text:'Nhẹ — có thể nhận thêm' };
+  const over = overdue ? `, trong đó ${overdue} việc đã quá hạn` : '';
+  if(n >= LOAD_HEAVY_AT || overdue >= 3) return { cls:'load-heavy', title:'Anh Cường đang rất bận', msg:`${n} việc có thời hạn${over}. Nên hạn chế giao thêm, hoặc chọn hạn xong xa hơn.` };
+  if(n >= LOAD_MEDIUM_AT || overdue >= 1) return { cls:'load-mid', title:'Anh Cường đang có khá nhiều việc', msg:`${n} việc có thời hạn${over}. Cân nhắc hạn xong cho hợp lý.` };
+  return { cls:'load-light', title:'Anh Cường đang khá rảnh', msg:`${n} việc có thời hạn${over}. Có thể giao thêm.` };
 }
 
 function dueLabel(t){
@@ -275,21 +281,40 @@ function taskCard(t){
   const cls = d !== null && d < 0 ? ' over' : (d === 0 ? ' today' : '');
   return `<div class="task-card${cls}">
     <div class="tt">${escapeHtml(t.text)}</div>
-    <div class="meta">${dueLabel(t)}${t.recipient ? `<span>📍 ${escapeHtml(t.recipient)}</span>` : ''}${t.by ? `<span class="tag-by">Giao bởi ${escapeHtml(t.by)}</span>` : ''}</div>
+    <div class="meta">${dueLabel(t)}${t.recipient ? `<span>${escapeHtml(t.recipient)}</span>` : ''}${t.by ? `<span class="tag-by">${escapeHtml(t.by)} giao</span>` : ''}</div>
     <div class="bar"><i style="width:${Math.min(100, t.progress || 0)}%"></i></div>
   </div>`;
 }
 
+const WEEKDAY_LONG = ['Chủ nhật','Thứ Hai','Thứ Ba','Thứ Tư','Thứ Năm','Thứ Sáu','Thứ Bảy'];
+function onceTasks(){
+  return workload && Array.isArray(workload.tasks)
+    ? workload.tasks.filter(t => t.type === 'task').sort((a,b) => (a.due || '9999').localeCompare(b.due || '9999'))
+    : [];
+}
+
+// Dòng "Đã chọn: ..." dưới ô hạn xong + tô sáng nút chọn nhanh.
+function renderDueInfo(){
+  const v = $('asgDue').value;
+  document.querySelectorAll('#quickDue button').forEach(b => b.classList.toggle('on', !!v && addDays(todayStr(), +b.dataset.days) === v));
+  const box = $('dueInfo');
+  if(!v){ box.textContent = ''; return; }
+  const wd = WEEKDAY_LONG[new Date(v + 'T00:00:00').getDay()];
+  const n = onceTasks().filter(t => t.due === v).length;
+  box.innerHTML = `Đã chọn: <b>${wd}, ${formatDateVN(v)}</b>` + (workload ? (n ? ` — hôm đó anh Cường đã có ${n} việc đến hạn.` : ' — hôm đó anh Cường chưa có việc nào đến hạn.') : '');
+}
+
 function renderLoad(){
   const box = $('loadSummary');
+  renderDueInfo();
   if(!workload || !Array.isArray(workload.tasks)){
-    box.innerHTML = '<div class="empty">Chưa có dữ liệu — người nhận việc chưa mở sổ công tác lần nào.</div>';
+    box.innerHTML = '<div class="empty">Chưa có số liệu công việc — anh Cường chưa mở sổ công tác lần nào.</div>';
+    $('dayStrip').innerHTML = '';
     return;
   }
   const today = todayStr();
-  const all = workload.tasks;
-  const once = all.filter(t => t.type === 'task').sort((a,b) => (a.due || '9999').localeCompare(b.due || '9999'));
-  const recurring = all.filter(t => t.type === 'recurring');
+  const once = onceTasks();
+  const recurring = workload.tasks.filter(t => t.type === 'recurring');
   const overdue = once.filter(t => t.due && t.due < today).length;
   const dueToday = once.filter(t => t.due === today).length;
   const week = once.filter(t => t.due && t.due > today && t.due <= addDays(today, 7)).length;
@@ -302,49 +327,53 @@ function renderLoad(){
     const c = once.filter(t => t.due === ds).length;
     const wd = ['CN','T2','T3','T4','T5','T6','T7'][new Date(ds + 'T00:00:00').getDay()];
     const [, m, d] = ds.split('-');
-    strip += `<button type="button" class="day${c >= 3 ? ' c3' : c === 2 ? ' c2' : c === 1 ? ' c1' : ''}${ds === selected ? ' sel' : ''}" data-date="${ds}" title="${c} việc đến hạn ngày ${d}/${m}">
+    strip += `<button type="button" class="day${c >= 3 ? ' c3' : c === 2 ? ' c2' : c === 1 ? ' c1' : ''}${ds === selected ? ' sel' : ''}" data-date="${ds}" aria-label="${wd} ${d}/${m}: ${c} việc đến hạn">
       <small>${wd}</small><span class="dn">${d}/${m}</span><span class="dc">${c || '·'}</span></button>`;
   }
-
-  const upd = workload.updatedAt ? new Date(workload.updatedAt) : null;
-  const updText = upd ? `${pad(upd.getHours())}:${pad(upd.getMinutes())} ${pad(upd.getDate())}/${pad(upd.getMonth()+1)}` : '—';
-
-  box.innerHTML = `
-    <div class="load-badge ${lv.cls}"><span>${lv.icon}</span><span>${lv.text}</span></div>
-    <div class="stats">
-      <div class="stat"><b>${once.length}</b><span>Việc có thời hạn</span></div>
-      <div class="stat s-over"><b>${overdue}</b><span>Quá hạn</span></div>
-      <div class="stat s-today"><b>${dueToday}</b><span>Đến hạn hôm nay</span></div>
-      <div class="stat s-week"><b>${week}</b><span>Trong 7 ngày tới</span></div>
-    </div>
-    <div class="days-title">Số việc đến hạn mỗi ngày (14 ngày tới) — bấm để chọn làm hạn xong</div>
-    <div class="days">${strip}</div>
-    <div class="days-title">Danh sách việc có thời hạn đang làm (${once.length})</div>
-    ${once.length ? once.map(taskCard).join('') : '<div class="empty">Hiện không có việc có thời hạn nào đang làm.</div>'}
-    ${recurring.length ? `<details><summary>Việc thường xuyên (${recurring.length})</summary>${recurring.map(taskCard).join('')}</details>` : ''}
-    <div class="updated" style="margin-top:12px;">Cập nhật lần cuối: ${updText}. Số liệu theo lần gần nhất người nhận việc mở/sửa sổ.</div>`;
-
-  box.querySelectorAll('.day').forEach(b => b.onclick = () => {
+  $('dayStrip').innerHTML = strip;
+  $('dayStrip').querySelectorAll('.day').forEach(b => b.onclick = () => {
     $('asgDue').value = b.dataset.date;
     renderLoad();
-    $('asgText').focus();
   });
+
+  const upd = workload.updatedAt ? new Date(workload.updatedAt) : null;
+  const updText = upd ? `${pad(upd.getHours())}:${pad(upd.getMinutes())} ngày ${pad(upd.getDate())}/${pad(upd.getMonth()+1)}` : '—';
+  const chips = [];
+  if(overdue) chips.push(`<span class="chip over">${overdue} quá hạn</span>`);
+  if(dueToday) chips.push(`<span class="chip today">${dueToday} đến hạn hôm nay</span>`);
+  if(week) chips.push(`<span class="chip week">${week} việc trong 7 ngày tới</span>`);
+  if(recurring.length) chips.push(`<span class="chip">${recurring.length} việc thường xuyên</span>`);
+
+  box.innerHTML = `
+    <div class="${lv.cls}">
+      <div class="load-badge"><span class="dot"></span><span>${lv.title}</span></div>
+      <div class="load-msg">${lv.msg}</div>
+      <div class="meter" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="meter-labels" aria-hidden="true"><span>Nhẹ</span><span>Vừa</span><span>Nặng</span></div>
+    </div>
+    ${chips.length ? `<div class="chips">${chips.join('')}</div>` : ''}
+    <details>
+      <summary>Xem anh Cường đang làm những việc gì (${once.length})</summary>
+      ${once.length ? once.map(taskCard).join('') : '<div class="empty">Hiện không có việc có thời hạn nào đang làm.</div>'}
+      ${recurring.length ? `<details><summary>Việc thường xuyên (${recurring.length})</summary>${recurring.map(taskCard).join('')}</details>` : ''}
+    </details>
+    <div class="updated">Số liệu cập nhật lần cuối lúc ${updText}.</div>`;
 }
 
 // ---------- Việc tôi đã giao ----------
 function statusBadge(a){
-  if(a._pending) return '<span class="st st-sent">⏫ Đang gửi…</span>';
-  if(a.status === 'sent') return '<span class="st st-sent">⏳ Chờ nhận</span>';
-  if(a.status === 'received') return `<span class="st st-received">🔧 Đang làm — ${a.progress || 0}%</span>`;
-  if(a.status === 'done') return `<span class="st st-done">✅ Đã xong${a.completedAt ? ' ' + formatDateVN(a.completedAt) : ''}</span>`;
-  if(a.status === 'removed') return '<span class="st st-gone">🗑 Đã gỡ khỏi sổ</span>';
-  if(a.status === 'cancelled') return '<span class="st st-gone">↩ Đã thu hồi</span>';
+  if(a._pending) return '<span class="st st-sent">Đang gửi…</span>';
+  if(a.status === 'sent') return '<span class="st st-sent">Chờ anh Cường nhận</span>';
+  if(a.status === 'received') return `<span class="st st-received">Đang làm — ${a.progress || 0}%</span>`;
+  if(a.status === 'done') return `<span class="st st-done">Đã xong${a.completedAt ? ' ' + formatDateVN(a.completedAt) : ''}</span>`;
+  if(a.status === 'removed') return '<span class="st st-gone">Đã gỡ khỏi sổ</span>';
+  if(a.status === 'cancelled') return '<span class="st st-gone">Đã thu hồi</span>';
   return '';
 }
 
 function renderMine(){
   const box = $('myList');
-  if(!myAssignments.length){ box.innerHTML = '<div class="empty">Bạn chưa giao việc nào.</div>'; return; }
+  if(!myAssignments.length){ box.innerHTML = '<div class="card"><div class="empty">Bạn chưa giao việc nào.</div></div>'; return; }
   const list = myAssignments.slice().sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
   const today = todayStr();
   box.innerHTML = list.map(a => {
@@ -353,8 +382,8 @@ function renderMine(){
     const over = open && due && due < today;
     const changed = due && a.due && due !== a.due ? ` <span>(hạn gốc ${formatDateVN(a.due)})</span>` : '';
     return `<div class="task-card${over ? ' over' : ''}" data-id="${escapeHtml(a.id)}">
-      <div class="tt">${a.priority === 'urgent' ? '🔥 <b>GẤP</b> · ' : ''}${escapeHtml(a.text)}</div>
-      <div class="meta">${due ? `<span class="${over ? 'due-over' : ''}">Hạn ${formatDateVN(due)}${changed}</span>` : ''}<span>Giao ngày ${a.createdDate ? formatDateVN(a.createdDate) : '—'}</span></div>
+      <div class="tt">${escapeHtml(a.text)}</div>
+      <div class="meta">${due ? `<span class="${over ? 'due-over' : ''}">Hạn ${formatDateVN(due)}${changed}</span>` : ''}<span>Giao ngày ${a.createdDate ? formatDateVN(a.createdDate) : '—'}</span>${a.priority === 'urgent' ? '<span class="urgent-tag">Gấp</span>' : ''}</div>
       <div class="meta" style="align-items:center;">${statusBadge(a)}${a.status === 'sent' && !a._pending ? '<button class="recall" data-act="recall">Thu hồi</button>' : ''}</div>
       ${a.status === 'received' || a.status === 'done' ? `<div class="bar"><i style="width:${a.status === 'done' ? 100 : (a.progress || 0)}%"></i></div>` : ''}
     </div>`;
@@ -384,19 +413,19 @@ async function submitAssignment(){
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   const data = {
     id, byId:me.id, byName:me.name, byTitle:me.title || '',
-    text, due, dueNow:due, priority:$('asgPriority').value, note:$('asgNote').value.trim(),
+    text, due, dueNow:due, priority:$('asgUrgent').checked ? 'urgent' : 'normal', note:$('asgNote').value.trim(),
     status:'sent', progress:0, completedAt:null,
     createdAt:Date.now(), createdDate:todayStr(), updatedAt:Date.now()
   };
   const btn = $('asgBtn');
   btn.disabled = true;
   setMsg('Đang gửi…', '');
-  let slow = setTimeout(() => setMsg('Chưa gửi được xong — có thể đang mất mạng. Đừng đóng trang, việc sẽ tự gửi khi có mạng.', 'warn'), SEND_SLOW_MS);
+  let slow = setTimeout(() => setMsg('Chưa gửi xong — có thể đang mất mạng. Xin đừng đóng trang, việc sẽ tự gửi khi có mạng.', 'warn'), SEND_SLOW_MS);
   try{
     await db.collection('assignments').doc(id).set(data);
     clearTimeout(slow);
-    setMsg('✅ Đã giao việc. Việc sẽ hiện trên sổ của người nhận ngay.', 'ok');
-    $('asgText').value = ''; $('asgNote').value = ''; $('asgDue').value = ''; $('asgPriority').value = 'normal';
+    setMsg('Đã giao việc. Việc sẽ hiện trên sổ của anh Cường ngay.', 'ok');
+    $('asgText').value = ''; $('asgNote').value = ''; $('asgDue').value = ''; $('asgUrgent').checked = false;
     renderLoad();
   }catch(e){
     clearTimeout(slow);
@@ -437,6 +466,10 @@ async function init(){
 $('asgName').addEventListener('input', onNameChanged);
 $('asgBtn').onclick = submitAssignment;
 $('asgDue').addEventListener('change', renderLoad);
+document.querySelectorAll('#quickDue button').forEach(b => b.onclick = () => {
+  $('asgDue').value = addDays(todayStr(), +b.dataset.days);
+  renderLoad();
+});
 init();
 </script>
 </body>
