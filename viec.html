@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#fbf6ee">
+<title>Việc của tôi — Sổ công tác</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"></noscript>
+<link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="center-note" id="loading">Đang tải…</div>
+
+  <!-- Chọn người -->
+  <div id="pickArea" hidden>
+    <div class="topbar"><div><div class="hello">Sổ công tác</div><h1>Bạn là ai?</h1></div>
+      <div class="topbar-actions"><a class="btn-soft" href="giaoviec.html" style="text-decoration:none;">Giao việc</a></div></div>
+    <div class="hint">Chọn tên của bạn để xem những việc được giao cho bạn. Lần sau bạn có thể mở thẳng link riêng của mình.</div>
+    <div class="person-grid" id="personGrid"></div>
+  </div>
+
+  <!-- Việc của một người -->
+  <div id="mainArea" hidden>
+    <div class="topbar">
+      <div>
+        <div class="hello" id="helloLine"></div>
+        <h1 id="whoTitle">Việc của bạn</h1>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-soft only-desktop" id="addTopBtn" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Thêm việc của tôi</button>
+        <button class="btn-soft" id="switchBtn" type="button">Đổi người</button>
+      </div>
+    </div>
+
+    <div class="layout side">
+      <div class="col sticky">
+        <div class="hero" aria-live="polite">
+          <div class="lb2" id="heroLabel">Việc đang chờ bạn</div>
+          <div class="num"><span id="heroNum">0</span><small>việc</small></div>
+          <div class="chips" id="heroChips"></div>
+        </div>
+        <div class="banner" id="notifyBanner" hidden>
+          <div class="bt"><b>Bật thông báo</b> để máy báo ngay khi có việc mới được giao (khi trang đang mở).</div>
+          <button type="button" id="notifyBtn">Bật thông báo</button>
+        </div>
+        <div class="hint" id="notifyHint"></div>
+      </div>
+      <div class="col" id="listArea"></div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" id="fabAdd" aria-label="Thêm việc của tôi" hidden>
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<!-- Popup việc mới -->
+<div class="modal-backdrop" id="popup" hidden><div class="modal" role="alertdialog" aria-labelledby="popupTitle" aria-describedby="popupSub" id="popupBox"></div></div>
+<!-- Thêm việc của tôi -->
+<div class="modal-backdrop" id="addModal" hidden>
+  <div class="modal" role="dialog" aria-labelledby="addTitle">
+    <h3 id="addTitle">Thêm việc của tôi</h3>
+    <div class="sub">Việc tự ghi cho mình, người khác (chỉ huy) cũng nhìn thấy trong mục "Ai đang bận".</div>
+    <label class="lb" for="addText">Việc cần làm</label>
+    <textarea id="addText" maxlength="1000" placeholder="Ví dụ: Chuẩn bị hồ sơ…"></textarea>
+    <label class="lb" for="addDue">Hạn xong</label>
+    <input type="date" id="addDue">
+    <div class="msg err" id="addMsg"></div>
+    <div class="btns"><button class="btn-soft" id="addCancel" type="button" style="justify-content:center">Hủy</button><button class="btn-primary inline" id="addOk" type="button" style="flex:1 1 140px">Thêm việc</button></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="common.js"></script>
+<script>
+// Trang "Việc của tôi": mỗi người một link riêng (viec.html?u=<mã>) hoặc chọn tên. Không cần mật khẩu.
+const USER_KEY = 'viec_user';
+let people = [OWNER_PERSON];
+let me = null;
+let items = [];                 // việc được giao cho mình
+let unsub = null;
+let firstSnapshot = true;
+let knownSent = new Set();      // việc "mới giao" đã thấy, để chỉ báo việc mới thật sự
+let popupIds = [];
+
+baseTitle = document.title;
+
+function ini(name){ return cleanName(name).split(' ').slice(-1)[0].charAt(0).toUpperCase(); }
+
+// ---------- Chọn người ----------
+function showPicker(){
+  if(unsub){ unsub(); unsub = null; }
+  me = null; items = []; setTitleBadge(0);
+  $('mainArea').hidden = true; $('fabAdd').hidden = true;
+  $('pickArea').hidden = false; $('loading').hidden = true;
+  $('personGrid').innerHTML = people.map(p => `<button type="button" class="person-btn" data-id="${escapeAttr(p.id)}">
+      <span class="avatar" aria-hidden="true">${escapeHtml(ini(p.name))}</span><b>${escapeHtml(p.name)}</b><span>${p.owner ? 'Chủ sổ — mở Sổ công tác' : escapeHtml(p.title || 'Xem việc được giao')}</span></button>`).join('');
+  $('personGrid').querySelectorAll('.person-btn').forEach(b => b.onclick = () => choose(b.dataset.id));
+}
+function choose(id){
+  if(id === OWNER_ID){ location.href = 'nhacviec.html'; return; }
+  setStored(USER_KEY, id);
+  history.replaceState(null, '', '?u=' + encodeURIComponent(id));
+  enter(people.find(p => p.id === id));
+}
+
+// ---------- Vào trang của một người ----------
+function enter(p){
+  me = p; firstSnapshot = true; knownSent = new Set();
+  $('pickArea').hidden = true; $('loading').hidden = true; $('mainArea').hidden = false; $('fabAdd').hidden = false;
+  $('whoTitle').textContent = 'Việc của ' + p.name;
+  baseTitle = 'Việc của ' + p.name + ' — Sổ công tác'; document.title = baseTitle;
+  const d = new Date();
+  $('helloLine').textContent = `${WEEKDAY_LONG[d.getDay()]}, ${formatDateVN(todayStr())}${p.title ? ' · ' + p.title : ''}`;
+  $('heroLabel').textContent = 'Việc đang chờ ' + p.name;
+  refreshNotifyUi();
+  if(unsub) unsub();
+  unsub = db.collection('assignments').where('toId', '==', p.id).onSnapshot({ includeMetadataChanges:true }, snap => {
+    items = snap.docs.map(d => ({ ...d.data(), _pending: d.metadata.hasPendingWrites }));
+    onItems();
+  }, err => {
+    $('listArea').innerHTML = `<div class="card"><div class="msg err">Không tải được việc (${escapeHtml(err.code || err.message)}).</div></div>`;
+  });
+  render();
+}
+
+function patch(id, fields){
+  return db.collection('assignments').doc(id).update({ ...fields, updatedAt: Date.now() }).catch(() => alert('Không lưu được, kiểm tra kết nối mạng rồi thử lại.'));
+}
+
+// ---------- Việc mới: popup + thông báo ----------
+function onItems(){
+  const sent = items.filter(a => a.status === 'sent' && !a._pending);
+  const fresh = sent.filter(a => !knownSent.has(a.id));
+  fresh.forEach(a => knownSent.add(a.id));
+  setTitleBadge(sent.length);
+  if(fresh.length){
+    if(!firstSnapshot){
+      beep();
+      const first = fresh[0];
+      desktopNotify(`${fresh.length > 1 ? fresh.length + ' việc mới' : 'Việc mới'} từ ${first.byName}`,
+        fresh.length > 1 ? fresh.map(a => a.text).join('\n') : `${first.text}\nHạn: ${first.due ? formatDateVN(first.due) : '—'}`, 'asg-' + first.id);
+    }
+    showPopup(sent);
+  }
+  firstSnapshot = false;
+  render();
+}
+
+function showPopup(sent){
+  popupIds = sent.map(a => a.id);
+  const box = $('popupBox');
+  box.innerHTML = `<h3 id="popupTitle">Có ${sent.length} việc mới được giao</h3>
+    <div class="sub" id="popupSub">Bấm "Đã nhận" để người giao biết bạn đã xem.</div>
+    ${sent.map(a => `<div class="item"><div class="it">${a.priority === 'urgent' ? '<span class="pill urgent">Gấp</span> ' : ''}${escapeHtml(a.text)}</div>
+      <div class="im">${escapeHtml(a.byName)} giao · Hạn ${a.due ? formatDateVN(a.due) : '—'}${a.note ? '<br>Ghi chú: ' + escapeHtml(a.note) : ''}</div></div>`).join('')}
+    <div class="btns"><button class="btn-primary inline" id="popupOk" type="button" style="flex:1 1 100%">Đã nhận</button></div>`;
+  $('popup').hidden = false;
+  $('popupOk').onclick = ackPopup;
+  setTimeout(() => { try{ $('popupOk').focus(); }catch(e){} }, 50);
+}
+function ackPopup(){
+  const ids = popupIds.slice(); popupIds = [];
+  $('popup').hidden = true;
+  ids.forEach(id => patch(id, { status:'received', seenAt:Date.now() }));
+}
+
+function refreshNotifyUi(){
+  const st = notifyState();
+  $('notifyBanner').hidden = st !== 'default';
+  $('notifyHint').textContent = st === 'granted' ? 'Thông báo trên máy này đã bật.' : st === 'denied' ? 'Thông báo đang bị chặn trong trình duyệt — vẫn có popup khi mở trang.' : st === 'unsupported' ? 'Trình duyệt này không hỗ trợ thông báo máy — vẫn có popup khi mở trang.' : '';
+}
+
+// ---------- Hiển thị ----------
+function cardHtml(a){
+  const today = todayStr();
+  const done = a.status === 'done';
+  const due = curDue(a);
+  const d = due ? daysBetween(due) : null;
+  const fresh = a.status === 'sent';
+  const cls = done ? ' done' : fresh ? ' fresh' : d !== null && d < 0 ? ' over' : d === 0 ? ' today' : '';
+  const self = a.byId === a.toId;
+  const t = { due };
+  return `<div class="task-card${cls}" data-id="${escapeAttr(a.id)}">
+    <input type="checkbox" class="check" aria-label="Đánh dấu xong"${done ? ' checked' : ''}>
+    <div class="main">
+      <div class="tt">${escapeHtml(a.text)}</div>
+      <div class="meta">${done ? `<span class="pill">Đã xong${a.completedAt ? ' ' + formatDateVN(a.completedAt) : ''}</span>` : duePill(t)}
+        ${self ? '<span class="pill">Tự ghi</span>' : `<span class="pill by">${escapeHtml(a.byName)} giao</span>`}
+        ${a.priority === 'urgent' ? '<span class="pill urgent">Gấp</span>' : ''}${fresh ? '<span class="pill new">Mới</span>' : ''}</div>
+      ${a.note ? `<div class="note-line">Ghi chú của ${escapeHtml(a.byName)}: ${escapeHtml(a.note)}</div>` : ''}
+      ${a.reply ? `<div class="note-line" style="background:var(--blue-bg);color:var(--blue-strong)">Báo cáo của bạn: ${escapeHtml(a.reply)}</div>` : ''}
+      ${done ? '' : `<div class="bar"><i style="width:${Math.min(100, a.progress || 0)}%"></i></div>`}
+      <div class="actions">
+        ${done ? '' : `<label style="display:flex;align-items:center;gap:8px;flex:1 1 220px;font-size:0.82rem;font-weight:600;">Tiến độ <input type="range" min="0" max="100" step="5" value="${a.progress || 0}" data-role="slider"><b data-role="pct">${a.progress || 0}%</b></label>`}
+        <textarea data-role="reply" placeholder="Ghi chú / báo cáo kết quả cho người giao…" style="flex:1 1 100%">${escapeHtml(a.reply || '')}</textarea>
+        <button type="button" data-role="reply-save">Lưu báo cáo</button>
+        ${self ? '<button type="button" class="danger" data-role="del">Xóa việc</button>' : ''}
+      </div>
+    </div>
+    <button type="button" class="icon-btn" data-role="more" aria-label="Thêm tùy chọn" aria-expanded="false">···</button>
+  </div>`;
+}
+
+function render(){
+  if(!me) return;
+  const today = todayStr();
+  const visible = items.filter(a => a.status !== 'removed' && a.status !== 'cancelled');
+  const open = visible.filter(isOpen);
+  const done = visible.filter(a => a.status === 'done').sort((a,b) => (b.completedAt || '').localeCompare(a.completedAt || ''));
+  const fresh = open.filter(a => a.status === 'sent');
+  const rest = open.filter(a => a.status !== 'sent');
+  const byDue = (a,b) => (curDue(a) || '9999').localeCompare(curDue(b) || '9999');
+  const overdue = rest.filter(a => curDue(a) && curDue(a) < today).sort(byDue);
+  const dueToday = rest.filter(a => curDue(a) === today);
+  const soon = rest.filter(a => curDue(a) && curDue(a) > today).sort(byDue);
+  const nodate = rest.filter(a => !curDue(a));
+
+  $('heroNum').textContent = open.length;
+  const chips = [];
+  if(fresh.length) chips.push(`<span class="chip blue">${fresh.length} việc mới</span>`);
+  const ov = open.filter(a => curDue(a) && curDue(a) < today).length;
+  if(ov) chips.push(`<span class="chip over">${ov} quá hạn</span>`);
+  if(dueToday.length) chips.push(`<span class="chip today">${dueToday.length} đến hạn hôm nay</span>`);
+  if(!chips.length) chips.push(`<span class="chip today">${open.length ? 'Chưa có việc nào gấp' : 'Không còn việc nào'}</span>`);
+  $('heroChips').innerHTML = chips.join('');
+
+  const section = (title, cls, list) => list.length ? `<div class="section-title ${cls}">${title} <span class="count">${list.length}</span></div>${list.map(cardHtml).join('')}` : '';
+  let html = section('Mới giao', 'fresh', fresh) + section('Quá hạn', 'over', overdue) + section('Hôm nay', 'today', dueToday) + section('Sắp tới', '', soon) + section('Chưa có hạn', '', nodate);
+  if(!open.length) html = '<div class="card"><div class="empty">Chưa có việc nào được giao cho bạn. Việc mới sẽ hiện ở đây ngay khi có người giao.</div></div>';
+  if(done.length) html += `<details style="margin-top:18px"><summary class="more-sum">Đã xong (${done.length})</summary>${done.slice(0, 30).map(cardHtml).join('')}</details>`;
+  const keepOpen = new Set([...document.querySelectorAll('#listArea .task-card.open')].map(c => c.dataset.id));
+  $('listArea').innerHTML = html;
+  $('listArea').querySelectorAll('.task-card').forEach(card => {
+    const id = card.dataset.id;
+    const a = items.find(x => x.id === id);
+    if(keepOpen.has(id)){ card.classList.add('open'); card.querySelector('[data-role="more"]').setAttribute('aria-expanded', 'true'); }
+    card.querySelector('.check').onchange = e => {
+      if(e.target.checked) patch(id, { status:'done', progress:100, completedAt:todayStr() });
+      else patch(id, { status:'received', progress:90, completedAt:null });
+    };
+    card.querySelector('[data-role="more"]').onclick = e => {
+      const o = card.classList.toggle('open'); e.currentTarget.setAttribute('aria-expanded', o ? 'true' : 'false');
+    };
+    const sl = card.querySelector('[data-role="slider"]');
+    if(sl){
+      sl.oninput = () => { card.querySelector('[data-role="pct"]').textContent = sl.value + '%'; card.querySelector('.bar i').style.width = sl.value + '%'; };
+      sl.onchange = () => {
+        const v = +sl.value;
+        if(v >= 100) patch(id, { status:'done', progress:100, completedAt:todayStr() });
+        else patch(id, { status:'received', progress:v, completedAt:null });
+      };
+    }
+    card.querySelector('[data-role="reply-save"]').onclick = () => patch(id, { reply: card.querySelector('[data-role="reply"]').value.trim() });
+    const del = card.querySelector('[data-role="del"]');
+    if(del) del.onclick = () => { if(confirm('Xóa việc này?')) patch(id, { status:'removed' }); };
+  });
+}
+
+// ---------- Thêm việc của tôi ----------
+function openAdd(){ $('addText').value = ''; $('addDue').value = ''; $('addMsg').textContent = ''; $('addModal').hidden = false; setTimeout(() => $('addText').focus(), 50); }
+async function addOwn(){
+  const text = $('addText').value.trim();
+  if(!text){ $('addMsg').textContent = 'Vui lòng nhập nội dung việc.'; return; }
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const due = $('addDue').value || null;
+  const now = Date.now();
+  $('addModal').hidden = true;
+  try{
+    await db.collection('assignments').doc(id).set({
+      id, groupId:id, byId:me.id, byName:me.name, byTitle:me.title || '', toId:me.id, toName:me.name,
+      text, due, dueNow:due, priority:'normal', note:'', status:'received', progress:0, completedAt:null,
+      createdAt:now, createdDate:todayStr(), updatedAt:now, seenAt:now
+    });
+  }catch(e){ alert('Không thêm được việc: ' + (e.code || e.message)); }
+}
+
+// ---------- Khởi động ----------
+async function init(){
+  if(!db){ $('loading').textContent = 'Không tải được dịch vụ lưu trữ (Firebase). Kiểm tra kết nối mạng rồi tải lại trang.'; return; }
+  try{ people = await loadPeople(); }catch(e){ people = [OWNER_PERSON]; }
+  const wanted = new URLSearchParams(location.search).get('u') || getStored(USER_KEY);
+  const p = people.find(x => x.id === wanted);
+  if(p && p.id === OWNER_ID && new URLSearchParams(location.search).get('u')){ location.replace('nhacviec.html'); return; }
+  if(p && p.id !== OWNER_ID) enter(p); else showPicker();
+}
+$('switchBtn').onclick = () => { setStored(USER_KEY, null); history.replaceState(null, '', location.pathname); showPicker(); };
+$('addTopBtn').onclick = openAdd; $('fabAdd').onclick = openAdd;
+$('addCancel').onclick = () => { $('addModal').hidden = true; };
+$('addOk').onclick = addOwn;
+$('notifyBtn').onclick = async () => { await askNotify(); refreshNotifyUi(); };
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('addModal').hidden) $('addModal').hidden = true; });
+document.addEventListener('visibilitychange', () => { if(!document.hidden) setTitleBadge(items.filter(a => a.status === 'sent' && !a._pending).length); });
+init();
+</script>
+</body>
+</html>
