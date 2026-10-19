@@ -1623,6 +1623,30 @@
   .status-bar{border-top:1px solid var(--line);}
   .lock-screen{border-radius:18px;}
 
+  .hdr-actions{display:flex; gap:8px; flex:none;}
+  a.hdr-btn{text-decoration:none;}
+  .os-layout{display:block;}
+  .os-main{min-width:0;}
+  @media (min-width:900px){
+    .wrap{max-width:1180px; padding:30px 28px 80px;}
+    .os-layout{display:grid; grid-template-columns:330px minmax(0,1fr); gap:28px; align-items:start;}
+    .os-side{position:sticky; top:16px; max-height:calc(100vh - 32px); overflow-y:auto; padding-bottom:8px;}
+    header h1{font-size:1.7rem;}
+    .tab-bar{flex-direction:column; flex-wrap:nowrap; gap:8px;}
+    .tab-btn, .tab-btn.tab-personal{display:flex; align-items:center; width:100%; text-align:left; border-radius:14px; padding:12px 16px;}
+    .tab-btn .tab-count{margin-left:auto;}
+    .motivation-banner{font-size:0.88rem;}
+    .assign-popup .modal-box{max-width:480px;}
+  }
+  .assign-popup .it{font-weight:600; line-height:1.4; word-break:break-word;}
+  .assign-popup .im{font-size:0.82rem; color:var(--ink-soft); margin-top:3px;}
+  .assign-popup .pitem{background:var(--paper); border-radius:14px; padding:10px 14px; margin-top:8px;}
+  .assign-popup .pbtns{display:flex; gap:10px; margin-top:16px;}
+  .assign-popup .pbtns button{flex:1; min-height:48px; border-radius:14px; border:1px solid var(--line); background:#fff; font-weight:600; cursor:pointer; font-size:0.95rem;}
+  .assign-popup .pbtns button.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .cmd-item .cmd-name small{font-size:0.8rem;}
+  .cmd-item .btn{padding:8px 10px; font-size:0.78rem;}
+  .notify-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:6px;}
   @media (max-width:600px){
     .wrap{padding:16px 14px calc(130px + env(safe-area-inset-bottom));}
     header h1{font-size:1.5rem;}
@@ -1641,19 +1665,24 @@
 </head>
 <body>
 <div class="wrap">
+<div class="os-layout">
+<aside class="os-side">
   <header>
     <div class="title-row">
       <div>
         <div class="hello-date"><span id="clockDate">--/--/----</span> · <span id="clockTime">--:--</span></div>
         <h1>Chào anh Cường</h1>
       </div>
-      <button class="hdr-btn" id="cmdOpenBtn" aria-label="Chỉ huy giao việc" title="Chỉ huy giao việc">
+      <div class="hdr-actions">
+      <a class="hdr-btn" id="assignOthersBtn" href="giaoviec.html?as=C%C6%B0%E1%BB%9Dng" aria-label="Giao việc cho người khác" title="Giao việc cho người khác">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4L3 11l7 3 3 7 8-17z"/><path d="M10 14l11-10"/></svg>
+      </a>
+      <button class="hdr-btn" id="cmdOpenBtn" aria-label="Mọi người và link giao việc" title="Mọi người và link giao việc">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M17 5.5a3 3 0 0 1 0 5.6M18.5 14.3c1.6.7 2.8 2.2 3 4.2"/></svg>
       </button>
+      </div>
     </div>
   </header>
-
-  <div class="assign-banner" id="assignBanner" style="display:none;"></div>
 
   <div class="motivation-banner" id="motivationBanner">
     <span class="motivation-icon">🔥</span>
@@ -1668,6 +1697,10 @@
     <button class="tab-btn" data-tab="recurring">Thường xuyên <span class="tab-count" id="tabCountRecurring">0</span></button>
     <button class="tab-btn tab-personal" data-tab="personal">Việc cá nhân <span class="tab-count" id="tabCountPersonal">0</span></button>
   </div>
+
+</aside>
+<main class="os-main">
+  <div class="assign-banner" id="assignBanner" style="display:none;"></div>
 
   <div class="lock-screen" id="lockScreen" style="display:none;">
     <div class="lock-icon">🔒</div>
@@ -1806,6 +1839,9 @@
     <span class="save-indicator" id="saveIndicator"><span class="save-dot"></span>Đã lưu</span>
   </div>
 </div>
+</main>
+</div>
+</div>
 
 <div class="undo-toast" id="undoToast">
   <span class="ut-text" id="undoToastText"></span>
@@ -1840,24 +1876,39 @@
 <div class="add-sheet-backdrop" id="addSheetBackdrop"></div>
 
 <div class="modal-backdrop" id="cmdModal" style="display:none;">
-  <div class="modal-box" role="dialog" aria-label="Chỉ huy giao việc">
-    <div class="modal-head"><b>👥 Chỉ huy giao việc</b><button id="cmdModalClose" aria-label="Đóng">&times;</button></div>
+  <div class="modal-box" role="dialog" aria-label="Mọi người và link giao việc">
+    <div class="modal-head"><b>👥 Mọi người và link giao việc</b><button id="cmdModalClose" aria-label="Đóng">&times;</button></div>
     <div class="modal-body">
-      <div class="modal-sub" style="margin-top:4px;">Link gửi cho chỉ huy</div>
+      <div class="modal-sub" style="margin-top:4px;">Link cho chỉ huy giao việc (giao được cho nhiều người)</div>
       <div class="cmd-link-row">
         <input type="text" id="cmdLinkInput" readonly>
         <button class="btn" id="cmdCopyBtn">Sao chép</button>
       </div>
-      <div class="cmd-hint">Chỉ huy mở link, chọn hoặc gõ tên mình rồi bấm <b>Giao việc</b> (không cần mật khẩu). Việc giao tự hiện trong sổ này, ghi rõ người giao và hạn xong; chỉ huy cũng xem được khối lượng việc anh đang làm (không thấy mục Việc cá nhân và ghi chú). Ai có link đều giao được.</div>
-      <div class="modal-sub">Tên gợi ý cho chỉ huy chọn nhanh</div>
+      <div class="cmd-hint">Chỉ huy mở link, chọn hoặc gõ tên mình, chọn một hoặc nhiều người nhận việc rồi bấm <b>Giao việc</b> (không cần mật khẩu). Ai có link đều giao được.</div>
+
+      <div class="modal-sub">Link xem việc của mọi người (chọn tên)</div>
+      <div class="cmd-link-row">
+        <input type="text" id="cmdLinkInput2" readonly>
+        <button class="btn" id="cmdCopyBtn2">Sao chép</button>
+      </div>
+
+      <div class="modal-sub">Mọi người (người nhận việc / chỉ huy)</div>
+      <div class="cmd-hint" style="margin-top:0;">Thêm tên để hiện trong danh sách chọn người nhận việc. Mỗi người có một link riêng để xem việc được giao cho mình.</div>
       <div id="cmdList"></div>
       <div class="cmd-add">
         <input type="text" id="cmdNewName" placeholder="Tên (vd Đ/c Hùng)" maxlength="40">
         <input type="text" id="cmdNewTitle" placeholder="Chức vụ (không bắt buộc)" maxlength="40">
-        <button class="btn" id="cmdAddBtn">+ Thêm tên</button>
+        <button class="btn" id="cmdAddBtn">+ Thêm người</button>
       </div>
+
+      <div class="modal-sub">Thông báo trên máy này</div>
+      <div class="notify-row"><button class="btn ghost" id="notifyEnableBtn">Bật thông báo</button><span class="cmd-hint" id="notifyState" style="margin:0;"></span></div>
     </div>
   </div>
+</div>
+
+<div class="modal-backdrop assign-popup" id="asgPopup" style="display:none;">
+  <div class="modal-box" role="alertdialog" aria-label="Việc mới được giao" id="asgPopupBox"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -2230,7 +2281,8 @@ async function loadTasks(){
 // rồi báo ngược trạng thái (đã nhận / tiến độ / xong) để chỉ huy theo dõi.
 // Đồng thời đăng một bản "khối lượng việc" đã lọc (không có việc cá nhân, không có ghi chú)
 // để chỉ huy biết đang làm gì mà cân nhắc việc giao.
-const COMMANDERS_KEY = 'commanders';
+const COMMANDERS_KEY = 'people';        // danh sách mọi người (cũ: 'commanders')
+const COMMANDERS_KEY_OLD = 'commanders';
 const WORKLOAD_KEY = 'public_workload';
 let commanders = [];
 let lastWorkloadJson = '';
@@ -2275,6 +2327,7 @@ function reconcileAssignments(list){
   const fresh = [];
   list.forEach(a=>{
     if(!a || !a.id) return;
+    if(a.toId && a.toId !== 'owner') return; // việc giao cho người khác không vào sổ này
     asgSynced[a.id] = asgStateKey(a.status, a.progress, a.dueNow !== undefined ? a.dueNow : a.due, a.completedAt);
     const tid = 'asg_' + a.id;
     if(tasks.some(t=>t.id === tid)) return;
@@ -2294,6 +2347,7 @@ function reconcileAssignments(list){
   if(fresh.length){
     unseenAssignments.push(...fresh);
     showAssignBanner();
+    showAssignPopup(fresh);
     saveTasks(); // lưu + báo "đã nhận" cho chỉ huy
     if(!isEditingInList()) render();
   }
@@ -2325,8 +2379,45 @@ function releaseAssignment(t){
     .update({ status:'removed', updatedAt:Date.now() }).catch(()=>{});
 }
 
+// ----- Popup + thông báo máy khi có việc mới -----
+function ownerBeep(){
+  try{
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx) return;
+    const ctx = new Ctx(); const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 880; g.gain.value = 0.08;
+    o.connect(g); g.connect(ctx.destination); o.start();
+    setTimeout(()=>{ o.frequency.value = 1175; }, 120);
+    setTimeout(()=>{ o.stop(); ctx.close(); }, 260);
+  }catch(e){}
+}
+function ownerNotify(title, body, tag){
+  if(typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  try{
+    const n = new Notification(title, { body, tag });
+    n.onclick = ()=>{ try{ window.focus(); }catch(e){} n.close(); };
+  }catch(e){}
+}
+function showAssignPopup(fresh){
+  const box = document.getElementById('asgPopupBox');
+  const all = unseenAssignments;
+  box.innerHTML = `<div class="modal-head"><b>📥 Có ${all.length} việc mới được giao</b></div>
+    <div class="modal-body">${all.slice(0,5).map(a=>`<div class="pitem"><div class="it">${a.priority === 'urgent' ? '<span class="ab-urgent">GẤP</span> ' : ''}${escapeHtml(a.text)}</div>
+      <div class="im">${escapeHtml(a.byName)} giao · Hạn ${a.due ? formatDateVN(a.due) : 'chưa rõ'}</div></div>`).join('')}
+      ${all.length > 5 ? `<div class="im" style="margin-top:8px;">… và ${all.length - 5} việc khác</div>` : ''}
+      <div class="pbtns"><button id="apClose">Để sau</button><button class="primary" id="apView">Xem việc</button></div></div>`;
+  document.getElementById('asgPopup').style.display = 'flex';
+  document.getElementById('apClose').onclick = ()=>{ document.getElementById('asgPopup').style.display = 'none'; };
+  document.getElementById('apView').onclick = ()=>{ document.getElementById('asgPopup').style.display = 'none'; unseenAssignments = []; showAssignBanner(); currentTabGoTo('task'); };
+  ownerBeep();
+  const first = fresh[0];
+  ownerNotify(`${fresh.length > 1 ? fresh.length + ' việc mới' : 'Việc mới'} từ ${first.byName}`,
+    fresh.length > 1 ? fresh.map(a=>a.text).join('\n') : `${first.text}\nHạn: ${first.due ? formatDateVN(first.due) : '—'}`, 'asg-' + first.id);
+}
+
 function showAssignBanner(){
   const el = document.getElementById('assignBanner');
+  document.title = unseenAssignments.length ? `(${unseenAssignments.length}) Sổ công tác` : 'Sổ công tác';
   if(!unseenAssignments.length){ el.style.display = 'none'; return; }
   const items = unseenAssignments.slice(0,3).map(a=>
     `<div class="ab-item"><b>${escapeHtml(a.byName)}</b> giao: ${escapeHtml(a.text)} <span>— hạn ${a.due ? formatDateVN(a.due) : 'chưa rõ'}</span>${a.priority === 'urgent' ? ' <span class="ab-urgent">GẤP</span>' : ''}</div>`
@@ -2342,7 +2433,8 @@ function showAssignBanner(){
 // ----- Quản lý tài khoản chỉ huy -----
 async function loadCommanders(){
   try{
-    const r = await window.storage.get(COMMANDERS_KEY);
+    let r = await window.storage.get(COMMANDERS_KEY);
+    if(!r) r = await window.storage.get(COMMANDERS_KEY_OLD);
     commanders = r ? JSON.parse(r.value) : [];
     if(!Array.isArray(commanders)) commanders = [];
   }catch(e){ commanders = []; }
@@ -2351,21 +2443,33 @@ function saveCommanders(){
   window.storage.set(COMMANDERS_KEY, JSON.stringify(commanders));
   renderCommanders();
 }
+function personalLink(id){ return new URL('viec.html?u=' + encodeURIComponent(id), location.href).href; }
+async function copyText(text, btn, label){
+  try{ await navigator.clipboard.writeText(text); }catch(e){
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e2){} ta.remove();
+  }
+  btn.textContent = 'Đã chép ✓';
+  setTimeout(()=> btn.textContent = label, 1500);
+}
 function renderCommanders(){
   const box = document.getElementById('cmdList');
   if(!commanders.length){
-    box.innerHTML = '<div class="empty" style="padding:8px 0;">Chưa có tên nào — thêm ở bên dưới (không bắt buộc, chỉ huy vẫn tự gõ tên được).</div>';
+    box.innerHTML = '<div class="empty" style="padding:8px 0;">Chưa có ai — thêm người ở bên dưới. (Cường luôn có sẵn.)</div>';
     return;
   }
   box.innerHTML = commanders.map(c=>`
     <div class="cmd-item" data-id="${escapeAttr(c.id)}">
       <div class="cmd-name">${escapeHtml(c.name)}${c.title ? `<small>${escapeHtml(c.title)}</small>` : ''}</div>
+      <button class="btn ghost" data-act="link">Sao chép link riêng</button>
       <button class="btn ghost danger" data-act="del">Xóa</button>
     </div>`).join('');
   box.querySelectorAll('.cmd-item').forEach(row=>{
     const c = commanders.find(x=>x.id === row.dataset.id);
+    const linkBtn = row.querySelector('[data-act="link"]');
+    linkBtn.onclick = ()=> copyText(personalLink(c.id), linkBtn, 'Sao chép link riêng');
     row.querySelector('[data-act="del"]').onclick = ()=>{
-      if(!confirm('Xóa tên "' + c.name + '" khỏi danh sách gợi ý? Việc đã giao trước đó vẫn giữ nguyên.')) return;
+      if(!confirm('Xóa "' + c.name + '" khỏi danh sách? Việc đã giao trước đó vẫn giữ nguyên.')) return;
       commanders = commanders.filter(x=>x.id !== c.id);
       saveCommanders();
     };
@@ -2374,7 +2478,7 @@ function renderCommanders(){
 function addCommander(){
   const name = document.getElementById('cmdNewName').value.trim();
   const title = document.getElementById('cmdNewTitle').value.trim();
-  if(!name){ alert('Nhập tên chỉ huy.'); return; }
+  if(!name){ alert('Nhập tên người.'); return; }
   if(commanders.some(c=>c.name.toLowerCase() === name.toLowerCase())){ alert('Tên này đã có trong danh sách.'); return; }
   const id = 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
   commanders.push({ id, name, title });
@@ -2384,7 +2488,9 @@ function addCommander(){
 async function openCommanderModal(){
   await loadCommanders();
   document.getElementById('cmdLinkInput').value = new URL('giaoviec.html', location.href).href;
+  document.getElementById('cmdLinkInput2').value = new URL('viec.html', location.href).href;
   renderCommanders();
+  refreshNotifyState();
   document.getElementById('cmdModal').style.display = 'flex';
 }
 function closeCommanderModal(){ document.getElementById('cmdModal').style.display = 'none'; }
@@ -2392,12 +2498,17 @@ document.getElementById('cmdOpenBtn').onclick = openCommanderModal;
 document.getElementById('cmdModalClose').onclick = closeCommanderModal;
 document.getElementById('cmdModal').addEventListener('click', e=>{ if(e.target.id === 'cmdModal') closeCommanderModal(); });
 document.getElementById('cmdAddBtn').onclick = addCommander;
-document.getElementById('cmdCopyBtn').onclick = async ()=>{
-  const input = document.getElementById('cmdLinkInput');
-  const btn = document.getElementById('cmdCopyBtn');
-  try{ await navigator.clipboard.writeText(input.value); }catch(e){ input.select(); document.execCommand('copy'); }
-  btn.textContent = 'Đã chép ✓';
-  setTimeout(()=> btn.textContent = 'Sao chép', 1500);
+document.getElementById('cmdCopyBtn').onclick = e=> copyText(document.getElementById('cmdLinkInput').value, e.currentTarget, 'Sao chép');
+document.getElementById('cmdCopyBtn2').onclick = e=> copyText(document.getElementById('cmdLinkInput2').value, e.currentTarget, 'Sao chép');
+function refreshNotifyState(){
+  const el = document.getElementById('notifyState'); const btn = document.getElementById('notifyEnableBtn');
+  const st = typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
+  el.textContent = st === 'granted' ? 'Đã bật — máy sẽ báo khi có việc mới (lúc trang đang mở).' : st === 'denied' ? 'Đang bị chặn trong trình duyệt. Mở cài đặt trang web để cho phép.' : st === 'unsupported' ? 'Trình duyệt không hỗ trợ — vẫn có popup khi mở trang.' : 'Chưa bật.';
+  btn.style.display = st === 'default' ? '' : 'none';
+}
+document.getElementById('notifyEnableBtn').onclick = async ()=>{
+  try{ await Notification.requestPermission(); }catch(e){}
+  refreshNotifyState();
 };
 document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeCommanderModal(); });
 
